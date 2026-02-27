@@ -11,6 +11,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -41,6 +42,10 @@ public class Position {
 
     @Column(nullable = false, precision = 19, scale = 8)
     private BigDecimal avgPrice;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Column(nullable = false)
     private Instant updatedAt;
@@ -97,6 +102,14 @@ public class Position {
 
     public void setAvgPrice(BigDecimal avgPrice) {
         this.avgPrice = avgPrice;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     public Instant getUpdatedAt() {

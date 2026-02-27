@@ -11,8 +11,11 @@ import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.repository.TradeRepository;
 import com.example.fxraptor.service.dto.MarketOrderExecutionResult;
 import com.example.fxraptor.service.dto.MarketOrderRequest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,43 +28,77 @@ public class MarketOrderService {
     private static final BigDecimal USD_JPY_BID = new BigDecimal("149.98");
     private static final BigDecimal USD_JPY_ASK = new BigDecimal("150.00");
     private static final int PRICE_SCALE = 8;
+    private static final int POSITION_UPDATE_MAX_RETRIES = 3;
 
     private final OrderRepository orderRepository;
     private final TradeRepository tradeRepository;
     private final PositionRepository positionRepository;
+    private final TransactionTemplate transactionTemplate;
 
     public MarketOrderService(OrderRepository orderRepository,
                               TradeRepository tradeRepository,
-                              PositionRepository positionRepository) {
+                              PositionRepository positionRepository,
+                              PlatformTransactionManager transactionManager) {
         this.orderRepository = orderRepository;
         this.tradeRepository = tradeRepository;
         this.positionRepository = positionRepository;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    @Transactional
     public MarketOrderExecutionResult execute(MarketOrderRequest request) {
         validate(request);
 
-        Order order = new Order();
-        order.setUserId(request.userId());
-        order.setCurrencyPair(request.currencyPair());
-        order.setSide(request.side());
-        order.setType(OrderType.MARKET);
-        order.setQuantity(request.quantity());
-        order.setStatus(OrderStatus.NEW);
-        Order savedOrder = orderRepository.save(order);
+        for (int attempt = 1; attempt <= POSITION_UPDATE_MAX_RETRIES; attempt++) {
+            try {
+                return executeInTransaction(request);
+            } catch (OptimisticLockingFailureException | DataIntegrityViolationException ex) {
+                if (attempt == POSITION_UPDATE_MAX_RETRIES) {
+                    throw ex;
+                }
+            }
+        }
 
-        BigDecimal executionPrice = resolveMarketPrice(request.currencyPair(), request.side());
+        throw new IllegalStateException("Failed to update position after retries");
+    }
 
-        Trade trade = new Trade();
-        trade.setOrderId(savedOrder.getId());
-        trade.setUserId(request.userId());
-        trade.setCurrencyPair(request.currencyPair());
-        trade.setSide(request.side());
-        trade.setPrice(executionPrice);
-        trade.setQuantity(request.quantity());
-        Trade savedTrade = tradeRepository.save(trade);
+    private MarketOrderExecutionResult executeInTransaction(MarketOrderRequest request) {
+        MarketOrderExecutionResult result = transactionTemplate.execute(status -> {
+            Order order = new Order();
+            order.setUserId(request.userId());
+            order.setCurrencyPair(request.currencyPair());
+            order.setSide(request.side());
+            order.setType(OrderType.MARKET);
+            order.setQuantity(request.quantity());
+            order.setStatus(OrderStatus.NEW);
+            Order savedOrder = orderRepository.save(order);
 
+            BigDecimal executionPrice = resolveMarketPrice(request.currencyPair(), request.side());
+
+            Trade trade = new Trade();
+            trade.setOrderId(savedOrder.getId());
+            trade.setUserId(request.userId());
+            trade.setCurrencyPair(request.currencyPair());
+            trade.setSide(request.side());
+            trade.setPrice(executionPrice);
+            trade.setQuantity(request.quantity());
+            Trade savedTrade = tradeRepository.save(trade);
+
+            Position savedPosition = upsertPosition(request, executionPrice);
+
+            savedOrder.setStatus(OrderStatus.FILLED);
+            Order filledOrder = orderRepository.save(savedOrder);
+
+            return new MarketOrderExecutionResult(filledOrder, savedTrade, savedPosition);
+        });
+
+        if (result == null) {
+            throw new IllegalStateException("Transaction returned no result");
+        }
+
+        return result;
+    }
+
+    private Position upsertPosition(MarketOrderRequest request, BigDecimal executionPrice) {
         Position position = positionRepository
                 .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), request.side())
                 .orElseGet(() -> createNewPosition(request, executionPrice));
@@ -73,12 +110,7 @@ public class MarketOrderService {
             position.setAvgPrice(newAvgPrice);
         }
 
-        Position savedPosition = positionRepository.save(position);
-
-        savedOrder.setStatus(OrderStatus.FILLED);
-        Order filledOrder = orderRepository.save(savedOrder);
-
-        return new MarketOrderExecutionResult(filledOrder, savedTrade, savedPosition);
+        return positionRepository.saveAndFlush(position);
     }
 
     // バリエーションチェック
