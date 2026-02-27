@@ -20,6 +20,7 @@ import java.math.RoundingMode;
 @Service
 public class MarketOrderService {
 
+    // 成行注文を固定レートで即時約定
     private static final String USD_JPY = "USD/JPY";
     private static final BigDecimal USD_JPY_BID = new BigDecimal("149.98");
     private static final BigDecimal USD_JPY_ASK = new BigDecimal("150.00");
@@ -80,6 +81,7 @@ public class MarketOrderService {
         return new MarketOrderExecutionResult(filledOrder, savedTrade, savedPosition);
     }
 
+    // バリエーションチェック
     private void validate(MarketOrderRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
@@ -98,6 +100,7 @@ public class MarketOrderService {
         }
     }
 
+    // 価格計算（固定）
     private BigDecimal resolveMarketPrice(String currencyPair, OrderSide side) {
         if (!USD_JPY.equals(currencyPair)) {
             throw new IllegalArgumentException("Only USD/JPY is supported");
@@ -115,6 +118,7 @@ public class MarketOrderService {
         return position;
     }
 
+    // ポジション計算
     private BigDecimal weightedAverage(BigDecimal currentAvg,
                                        BigDecimal currentQty,
                                        BigDecimal newPrice,
