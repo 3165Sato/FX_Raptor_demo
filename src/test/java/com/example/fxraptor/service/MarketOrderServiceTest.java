@@ -1,10 +1,12 @@
 package com.example.fxraptor.service;
 
+import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.Order;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
+import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.OrderRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.repository.TradeRepository;
@@ -37,6 +39,9 @@ import static org.mockito.Mockito.when;
 class MarketOrderServiceTest {
 
     @org.mockito.Mock
+    private AccountRepository accountRepository;
+
+    @org.mockito.Mock
     private OrderRepository orderRepository;
 
     @org.mockito.Mock
@@ -50,6 +55,7 @@ class MarketOrderServiceTest {
     @Test
     void retriesPositionUpdateWhenOptimisticLockOccurs() {
         MarketOrderService service = new MarketOrderService(
+                accountRepository,
                 orderRepository,
                 tradeRepository,
                 positionRepository,
@@ -105,6 +111,7 @@ class MarketOrderServiceTest {
     @Test
     void retriesPositionInsertWhenConcurrentCreateHitsUniqueConstraint() {
         MarketOrderService service = new MarketOrderService(
+                accountRepository,
                 orderRepository,
                 tradeRepository,
                 positionRepository,
@@ -159,6 +166,7 @@ class MarketOrderServiceTest {
     @Test
     void offsetsOppositeSidePositionBeforeOpeningNewPosition() {
         MarketOrderService service = new MarketOrderService(
+                accountRepository,
                 orderRepository,
                 tradeRepository,
                 positionRepository,
@@ -190,6 +198,10 @@ class MarketOrderServiceTest {
         shortPosition.setAvgPrice(new BigDecimal("151.00000000"));
         shortPosition.setVersion(0L);
 
+        Account account = account("user-3", "10000.0000");
+        when(accountRepository.findByUserId("user-3")).thenReturn(Optional.of(account));
+        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         when(positionRepository.findByUserIdAndCurrencyPairAndSide("user-3", "USD/JPY", OrderSide.BUY))
                 .thenReturn(Optional.empty());
         when(positionRepository.findByUserIdAndCurrencyPairAndSide("user-3", "USD/JPY", OrderSide.SELL))
@@ -208,7 +220,60 @@ class MarketOrderServiceTest {
         assertThat(result.position()).isNotNull();
         assertThat(result.position().getSide()).isEqualTo(OrderSide.SELL);
         assertThat(result.position().getQuantity()).isEqualByComparingTo("1.00000000");
+        assertThat(account.getBalance()).isEqualByComparingTo("10001.0000");
         verify(positionRepository, never()).delete(any(Position.class));
+    }
+
+    @Test
+    void deletesPositionAndUpdatesAccountWhenOppositePositionIsFullyClosed() {
+        MarketOrderService service = new MarketOrderService(
+                accountRepository,
+                orderRepository,
+                tradeRepository,
+                positionRepository,
+                transactionManager
+        );
+
+        MarketOrderRequest request = new MarketOrderRequest(
+                "user-4",
+                "USD/JPY",
+                OrderSide.BUY,
+                new BigDecimal("2.00000000")
+        );
+
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            if (order.getId() == null) {
+                order.setId(600L);
+            }
+            return order;
+        });
+        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Position shortPosition = new Position();
+        shortPosition.setId(60L);
+        shortPosition.setUserId("user-4");
+        shortPosition.setCurrencyPair("USD/JPY");
+        shortPosition.setSide(OrderSide.SELL);
+        shortPosition.setQuantity(new BigDecimal("2.00000000"));
+        shortPosition.setAvgPrice(new BigDecimal("151.00000000"));
+        shortPosition.setVersion(0L);
+
+        Account account = account("user-4", "10000.0000");
+        when(accountRepository.findByUserId("user-4")).thenReturn(Optional.of(account));
+        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(positionRepository.findByUserIdAndCurrencyPairAndSide("user-4", "USD/JPY", OrderSide.BUY))
+                .thenReturn(Optional.empty());
+        when(positionRepository.findByUserIdAndCurrencyPairAndSide("user-4", "USD/JPY", OrderSide.SELL))
+                .thenReturn(Optional.of(shortPosition));
+
+        MarketOrderExecutionResult result = service.execute(request);
+
+        assertThat(result.position()).isNull();
+        assertThat(account.getBalance()).isEqualByComparingTo("10002.0000");
+        verify(positionRepository).delete(shortPosition);
+        verify(positionRepository, never()).saveAndFlush(any(Position.class));
     }
 
     private static Position position(Long id, String quantity, String avgPrice, Long version) {
@@ -221,6 +286,14 @@ class MarketOrderServiceTest {
         position.setAvgPrice(new BigDecimal(avgPrice));
         position.setVersion(version);
         return position;
+    }
+
+    private static Account account(String userId, String balance) {
+        Account account = new Account();
+        account.setUserId(userId);
+        account.setCurrency("JPY");
+        account.setBalance(new BigDecimal(balance));
+        return account;
     }
 
     private static class NoOpTransactionManager implements PlatformTransactionManager {

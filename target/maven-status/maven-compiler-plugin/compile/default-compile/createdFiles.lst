@@ -12,6 +12,7 @@ com\example\fxraptor\domain\Trade.class
 com\example\fxraptor\domain\MarginRule.class
 com\example\fxraptor\repository\TradeRepository.class
 com\example\fxraptor\domain\Quote.class
+com\example\fxraptor\repository\AccountRepository.class
 com\example\fxraptor\service\dto\MarketOrderRequest.class
 com\example\fxraptor\domain\OrderType.class
 com\example\fxraptor\service\MarginService.class

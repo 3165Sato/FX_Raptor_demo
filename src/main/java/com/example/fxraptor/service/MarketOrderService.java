@@ -6,6 +6,8 @@ import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.OrderType;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
+import com.example.fxraptor.domain.Account;
+import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.OrderRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.repository.TradeRepository;
@@ -32,12 +34,15 @@ public class MarketOrderService {
     private final OrderRepository orderRepository;
     private final TradeRepository tradeRepository;
     private final PositionRepository positionRepository;
+    private final AccountRepository accountRepository;
     private final TransactionTemplate transactionTemplate;
 
-    public MarketOrderService(OrderRepository orderRepository,
+    public MarketOrderService(AccountRepository accountRepository,
+                              OrderRepository orderRepository,
                               TradeRepository tradeRepository,
                               PositionRepository positionRepository,
                               PlatformTransactionManager transactionManager) {
+        this.accountRepository = accountRepository;
         this.orderRepository = orderRepository;
         this.tradeRepository = tradeRepository;
         this.positionRepository = positionRepository;
@@ -112,6 +117,7 @@ public class MarketOrderService {
             BigDecimal offsetQuantity = remainingQuantity.min(oppositeSidePosition.getQuantity());
             BigDecimal oppositeRemaining = oppositeSidePosition.getQuantity().subtract(offsetQuantity);
             remainingQuantity = remainingQuantity.subtract(offsetQuantity);
+            realizePnl(request.userId(), oppositeSidePosition, executionPrice, offsetQuantity);
 
             if (oppositeRemaining.compareTo(BigDecimal.ZERO) == 0) {
                 positionRepository.delete(oppositeSidePosition);
@@ -180,6 +186,31 @@ public class MarketOrderService {
 
     private OrderSide oppositeSide(OrderSide side) {
         return side == OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY;
+    }
+
+    private void realizePnl(String userId,
+                            Position oppositeSidePosition,
+                            BigDecimal executionPrice,
+                            BigDecimal offsetQuantity) {
+        if (offsetQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        Account account = accountRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("account not found for userId: " + userId));
+
+        BigDecimal realizedPnl = calculateRealizedPnl(oppositeSidePosition, executionPrice, offsetQuantity);
+        account.setBalance(account.getBalance().add(realizedPnl));
+        accountRepository.save(account);
+    }
+
+    private BigDecimal calculateRealizedPnl(Position oppositeSidePosition,
+                                            BigDecimal executionPrice,
+                                            BigDecimal offsetQuantity) {
+        if (oppositeSidePosition.getSide() == OrderSide.BUY) {
+            return executionPrice.subtract(oppositeSidePosition.getAvgPrice()).multiply(offsetQuantity);
+        }
+        return oppositeSidePosition.getAvgPrice().subtract(executionPrice).multiply(offsetQuantity);
     }
 
     private BigDecimal weightedAverage(BigDecimal currentAvg,
