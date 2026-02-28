@@ -1,4 +1,4 @@
-﻿package com.example.fxraptor.domain;
+package com.example.fxraptor.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

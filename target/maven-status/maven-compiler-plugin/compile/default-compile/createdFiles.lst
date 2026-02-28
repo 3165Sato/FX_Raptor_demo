@@ -1,0 +1,17 @@
+com\example\fxraptor\repository\PositionRepository.class
+com\example\fxraptor\domain\OrderSide.class
+com\example\fxraptor\service\dto\MarketOrderExecutionResult.class
+com\example\fxraptor\repository\OrderRepository.class
+com\example\fxraptor\domain\OrderStatus.class
+com\example\fxraptor\domain\Account.class
+com\example\fxraptor\service\dto\MarginCalculationResult.class
+com\example\fxraptor\domain\Order.class
+com\example\fxraptor\service\MarketOrderService.class
+com\example\fxraptor\domain\Position.class
+com\example\fxraptor\domain\Trade.class
+com\example\fxraptor\domain\MarginRule.class
+com\example\fxraptor\repository\TradeRepository.class
+com\example\fxraptor\domain\Quote.class
+com\example\fxraptor\service\dto\MarketOrderRequest.class
+com\example\fxraptor\domain\OrderType.class
+com\example\fxraptor\service\MarginService.class

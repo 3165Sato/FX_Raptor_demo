@@ -1,4 +1,4 @@
-﻿package com.example.fxraptor.repository;
+package com.example.fxraptor.repository;
 
 import com.example.fxraptor.domain.Trade;
 import org.springframework.data.jpa.repository.JpaRepository;
