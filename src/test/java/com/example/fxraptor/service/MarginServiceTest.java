@@ -5,21 +5,31 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.service.dto.MarketOrderRequest;
 import com.example.fxraptor.service.dto.MarginCalculationResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class MarginServiceTest {
 
-    private final MarginService marginService = new MarginService();
+    @Mock
+    private MarketOrderService marketOrderService;
 
     @Test
     void calculatesRequiredEffectiveAndMaintenanceMargins() {
+        MarginService marginService = new MarginService(marketOrderService);
         Account account = account("10000.0000", "JPY");
         Position buyPosition = position("USD/JPY", OrderSide.BUY, "1000.00000000", "149.00000000");
         Position sellPosition = position("USD/JPY", OrderSide.SELL, "500.00000000", "151.00000000");
@@ -36,10 +46,12 @@ class MarginServiceTest {
         assertThat(result.requiredMargin()).isEqualByComparingTo("9000.00000000");
         assertThat(result.effectiveMargin()).isEqualByComparingTo("11500.00000000");
         assertThat(result.marginMaintenanceRatio()).isEqualByComparingTo("127.7778");
+        verify(marketOrderService, never()).execute(org.mockito.ArgumentMatchers.any(MarketOrderRequest.class));
     }
 
     @Test
     void usesBidForBuyAndAskForSellInUnrealizedPnl() {
+        MarginService marginService = new MarginService(marketOrderService);
         Account account = account("0.0000", "JPY");
         Position buyPosition = position("USD/JPY", OrderSide.BUY, "1.00000000", "149.00000000");
         Position sellPosition = position("USD/JPY", OrderSide.SELL, "1.00000000", "151.00000000");
@@ -58,6 +70,7 @@ class MarginServiceTest {
 
     @Test
     void rejectsAccountCurrencyThatDoesNotMatchQuoteCurrency() {
+        MarginService marginService = new MarginService(marketOrderService);
         Account account = account("10000.0000", "USD");
         Position position = position("USD/JPY", OrderSide.BUY, "1.00000000", "149.00000000");
         Quote quote = quote("USD/JPY", "150.00000000", "150.02000000");
@@ -70,6 +83,34 @@ class MarginServiceTest {
                 List.of(marginRule)
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("account currency must match quote currency");
+    }
+
+    @Test
+    void issuesForcedMarketOrdersWhenMaintenanceRatioFallsBelowLiquidationRate() {
+        MarginService marginService = new MarginService(marketOrderService);
+        Account account = account("1000.0000", "JPY");
+        Position buyPosition = position("USD/JPY", OrderSide.BUY, "1000.00000000", "149.00000000");
+        Position sellPosition = position("USD/JPY", OrderSide.SELL, "500.00000000", "151.00000000");
+        Quote quote = quote("USD/JPY", "150.00000000", "150.00000000");
+        MarginRule marginRule = marginRule("USD/JPY", "25.00");
+        marginRule.setLiquidationRate(new BigDecimal("0.3000"));
+
+        MarginCalculationResult result = marginService.calculate(
+                account,
+                List.of(buyPosition, sellPosition),
+                List.of(quote),
+                List.of(marginRule)
+        );
+
+        assertThat(result.marginMaintenanceRatio()).isEqualByComparingTo("27.7778");
+
+        ArgumentCaptor<MarketOrderRequest> requestCaptor = ArgumentCaptor.forClass(MarketOrderRequest.class);
+        verify(marketOrderService, org.mockito.Mockito.times(2)).execute(requestCaptor.capture());
+
+        List<MarketOrderRequest> requests = requestCaptor.getAllValues();
+        assertThat(requests).extracting(MarketOrderRequest::side).containsExactly(OrderSide.SELL, OrderSide.BUY);
+        assertThat(requests).extracting(MarketOrderRequest::quantity)
+                .containsExactly(new BigDecimal("1000.00000000"), new BigDecimal("500.00000000"));
     }
 
     private static Account account(String balance, String currency) {

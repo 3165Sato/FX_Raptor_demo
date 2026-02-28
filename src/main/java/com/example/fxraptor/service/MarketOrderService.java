@@ -23,7 +23,6 @@ import java.math.RoundingMode;
 @Service
 public class MarketOrderService {
 
-    // 成行注文を固定レートで即時約定
     private static final String USD_JPY = "USD/JPY";
     private static final BigDecimal USD_JPY_BID = new BigDecimal("149.98");
     private static final BigDecimal USD_JPY_ASK = new BigDecimal("150.00");
@@ -99,21 +98,51 @@ public class MarketOrderService {
     }
 
     private Position upsertPosition(MarketOrderRequest request, BigDecimal executionPrice) {
-        Position position = positionRepository
+        Position sameSidePosition = positionRepository
                 .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), request.side())
-                .orElseGet(() -> createNewPosition(request, executionPrice));
+                .orElse(null);
+        Position oppositeSidePosition = positionRepository
+                .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), oppositeSide(request.side()))
+                .orElse(null);
 
-        if (position.getId() != null) {
-            BigDecimal newQuantity = position.getQuantity().add(request.quantity());
-            BigDecimal newAvgPrice = weightedAverage(position.getAvgPrice(), position.getQuantity(), executionPrice, request.quantity());
-            position.setQuantity(newQuantity);
-            position.setAvgPrice(newAvgPrice);
+        BigDecimal remainingQuantity = request.quantity();
+        Position updatedPosition = sameSidePosition;
+
+        if (oppositeSidePosition != null) {
+            BigDecimal offsetQuantity = remainingQuantity.min(oppositeSidePosition.getQuantity());
+            BigDecimal oppositeRemaining = oppositeSidePosition.getQuantity().subtract(offsetQuantity);
+            remainingQuantity = remainingQuantity.subtract(offsetQuantity);
+
+            if (oppositeRemaining.compareTo(BigDecimal.ZERO) == 0) {
+                positionRepository.delete(oppositeSidePosition);
+                updatedPosition = null;
+            } else {
+                oppositeSidePosition.setQuantity(oppositeRemaining);
+                updatedPosition = positionRepository.saveAndFlush(oppositeSidePosition);
+            }
         }
 
-        return positionRepository.saveAndFlush(position);
+        if (remainingQuantity.compareTo(BigDecimal.ZERO) == 0) {
+            return updatedPosition;
+        }
+
+        if (sameSidePosition == null) {
+            Position newPosition = createNewPosition(request, executionPrice, remainingQuantity);
+            return positionRepository.saveAndFlush(newPosition);
+        }
+
+        BigDecimal newQuantity = sameSidePosition.getQuantity().add(remainingQuantity);
+        BigDecimal newAvgPrice = weightedAverage(
+                sameSidePosition.getAvgPrice(),
+                sameSidePosition.getQuantity(),
+                executionPrice,
+                remainingQuantity
+        );
+        sameSidePosition.setQuantity(newQuantity);
+        sameSidePosition.setAvgPrice(newAvgPrice);
+        return positionRepository.saveAndFlush(sameSidePosition);
     }
 
-    // バリエーションチェック
     private void validate(MarketOrderRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
@@ -132,7 +161,6 @@ public class MarketOrderService {
         }
     }
 
-    // 価格計算（固定）
     private BigDecimal resolveMarketPrice(String currencyPair, OrderSide side) {
         if (!USD_JPY.equals(currencyPair)) {
             throw new IllegalArgumentException("Only USD/JPY is supported");
@@ -140,17 +168,20 @@ public class MarketOrderService {
         return side == OrderSide.BUY ? USD_JPY_ASK : USD_JPY_BID;
     }
 
-    private Position createNewPosition(MarketOrderRequest request, BigDecimal executionPrice) {
+    private Position createNewPosition(MarketOrderRequest request, BigDecimal executionPrice, BigDecimal quantity) {
         Position position = new Position();
         position.setUserId(request.userId());
         position.setCurrencyPair(request.currencyPair());
         position.setSide(request.side());
-        position.setQuantity(request.quantity());
+        position.setQuantity(quantity);
         position.setAvgPrice(executionPrice);
         return position;
     }
 
-    // ポジション計算
+    private OrderSide oppositeSide(OrderSide side) {
+        return side == OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY;
+    }
+
     private BigDecimal weightedAverage(BigDecimal currentAvg,
                                        BigDecimal currentQty,
                                        BigDecimal newPrice,

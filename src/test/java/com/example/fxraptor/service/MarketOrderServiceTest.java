@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -153,6 +154,61 @@ class MarketOrderServiceTest {
         assertThat(retriedPosition.getAvgPrice()).isEqualByComparingTo("150.00000000");
         assertThat(result.position().getQuantity()).isEqualByComparingTo("2.00000000");
         assertThat(result.order().getStatus()).isEqualTo(OrderStatus.FILLED);
+    }
+
+    @Test
+    void offsetsOppositeSidePositionBeforeOpeningNewPosition() {
+        MarketOrderService service = new MarketOrderService(
+                orderRepository,
+                tradeRepository,
+                positionRepository,
+                transactionManager
+        );
+
+        MarketOrderRequest request = new MarketOrderRequest(
+                "user-3",
+                "USD/JPY",
+                OrderSide.BUY,
+                new BigDecimal("1.00000000")
+        );
+
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            if (order.getId() == null) {
+                order.setId(500L);
+            }
+            return order;
+        });
+        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Position shortPosition = new Position();
+        shortPosition.setId(50L);
+        shortPosition.setUserId("user-3");
+        shortPosition.setCurrencyPair("USD/JPY");
+        shortPosition.setSide(OrderSide.SELL);
+        shortPosition.setQuantity(new BigDecimal("2.00000000"));
+        shortPosition.setAvgPrice(new BigDecimal("151.00000000"));
+        shortPosition.setVersion(0L);
+
+        when(positionRepository.findByUserIdAndCurrencyPairAndSide("user-3", "USD/JPY", OrderSide.BUY))
+                .thenReturn(Optional.empty());
+        when(positionRepository.findByUserIdAndCurrencyPairAndSide("user-3", "USD/JPY", OrderSide.SELL))
+                .thenReturn(Optional.of(shortPosition));
+        when(positionRepository.saveAndFlush(any(Position.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MarketOrderExecutionResult result = service.execute(request);
+
+        ArgumentCaptor<Position> positionCaptor = ArgumentCaptor.forClass(Position.class);
+        verify(positionRepository).saveAndFlush(positionCaptor.capture());
+        Position updatedShort = positionCaptor.getValue();
+
+        assertThat(updatedShort.getSide()).isEqualTo(OrderSide.SELL);
+        assertThat(updatedShort.getQuantity()).isEqualByComparingTo("1.00000000");
+        assertThat(updatedShort.getAvgPrice()).isEqualByComparingTo("151.00000000");
+        assertThat(result.position()).isNotNull();
+        assertThat(result.position().getSide()).isEqualTo(OrderSide.SELL);
+        assertThat(result.position().getQuantity()).isEqualByComparingTo("1.00000000");
+        verify(positionRepository, never()).delete(any(Position.class));
     }
 
     private static Position position(Long id, String quantity, String avgPrice, Long version) {

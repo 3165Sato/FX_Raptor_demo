@@ -5,6 +5,7 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.service.dto.MarketOrderRequest;
 import com.example.fxraptor.service.dto.MarginCalculationResult;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,11 @@ public class MarginService {
     private static final int MONEY_SCALE = 8;
     private static final int RATIO_SCALE = 4;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    private final MarketOrderService marketOrderService;
+
+    public MarginService(MarketOrderService marketOrderService) {
+        this.marketOrderService = marketOrderService;
+    }
 
     public MarginCalculationResult calculate(Account account,
                                              List<Position> positions,
@@ -53,8 +59,30 @@ public class MarginService {
         requiredMargin = requiredMargin.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
         BigDecimal effectiveMargin = account.getBalance().add(unrealizedPnl).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
         BigDecimal marginMaintenanceRatio = calculateMarginMaintenanceRatio(effectiveMargin, requiredMargin);
+        maybeForceLiquidate(account, positions, ruleByPair, marginMaintenanceRatio);
 
         return new MarginCalculationResult(requiredMargin, effectiveMargin, marginMaintenanceRatio);
+    }
+
+    private void maybeForceLiquidate(Account account,
+                                     List<Position> positions,
+                                     Map<String, MarginRule> ruleByPair,
+                                     BigDecimal marginMaintenanceRatio) {
+        if (!isLiquidationTriggered(positions, ruleByPair, marginMaintenanceRatio)) {
+            return;
+        }
+
+        for (Position position : positions) {
+            if (position.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            marketOrderService.execute(new MarketOrderRequest(
+                    account.getUserId(),
+                    position.getCurrencyPair(),
+                    oppositeSide(position.getSide()),
+                    position.getQuantity()
+            ));
+        }
     }
 
     private BigDecimal calculateUnrealizedPnl(Position position, Quote quote) {
@@ -76,6 +104,21 @@ public class MarginService {
         return effectiveMargin
                 .multiply(HUNDRED)
                 .divide(requiredMargin, RATIO_SCALE, RoundingMode.HALF_UP);
+    }
+
+    private boolean isLiquidationTriggered(List<Position> positions,
+                                           Map<String, MarginRule> ruleByPair,
+                                           BigDecimal marginMaintenanceRatio) {
+        for (Position position : positions) {
+            MarginRule marginRule = requireMarginRule(ruleByPair, position.getCurrencyPair());
+            BigDecimal liquidationThreshold = marginRule.getLiquidationRate()
+                    .multiply(HUNDRED)
+                    .setScale(RATIO_SCALE, RoundingMode.HALF_UP);
+            if (marginMaintenanceRatio.compareTo(liquidationThreshold) < 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // アカウントのバリエーションチェック
@@ -138,7 +181,14 @@ public class MarginService {
         if (marginRule.getLeverage() == null || marginRule.getLeverage().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("margin rule leverage must be positive");
         }
+        if (marginRule.getLiquidationRate() == null || marginRule.getLiquidationRate().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("margin rule liquidationRate must not be negative");
+        }
         return marginRule;
+    }
+
+    private OrderSide oppositeSide(OrderSide side) {
+        return side == OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY;
     }
 
     private <T> Map<String, T> indexByCurrencyPair(List<T> values, Function<T, String> keyExtractor) {
