@@ -16,6 +16,11 @@ import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * ユーザーが保有している建玉。
+ * このデモは (userId, currencyPair, side) ごとに 1 行だけ持つネットポジション方式で、
+ * 反対売買は別の建玉を増やさず既存ポジションの相殺として扱う。
+ */
 @Entity
 @Table(
         name = "positions",
@@ -43,6 +48,10 @@ public class Position {
     @Column(nullable = false, precision = 19, scale = 8)
     private BigDecimal avgPrice;
 
+    /**
+     * 数量・平均価格の更新競合を検知するための楽観ロック。
+     * 同時更新が起きた場合は Service 側で再読込して再計算する。
+     */
     @Version
     @Column(nullable = false)
     private Long version;

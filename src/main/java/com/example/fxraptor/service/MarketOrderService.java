@@ -23,6 +23,11 @@ import com.example.fxraptor.repository.TradeRepository;
 import com.example.fxraptor.service.dto.MarketOrderExecutionResult;
 import com.example.fxraptor.service.dto.MarketOrderRequest;
 
+/**
+ * 成行注文を受け付け、Order -> Trade -> Position -> Account 更新までを一貫して行うサービス。
+ * デモ実装では固定レートで即時約定させるが、更新順序とトランザクション境界は
+ * 実運用で重要になる整合性を意識している。
+ */
 @Service
 public class MarketOrderService {
 
@@ -53,6 +58,11 @@ public class MarketOrderService {
     public MarketOrderExecutionResult execute(MarketOrderRequest request) {
         validate(request);
 
+        /*
+         * Position は (userId, currencyPair, side) で 1 行に集約しているため、
+         * 同時更新では数量と平均価格の read-modify-write 競合が起きる。
+         * 楽観ロック例外を拾って再試行することで、壊れた集計値の上書きを防ぐ。
+         */
         for (int attempt = 1; attempt <= POSITION_UPDATE_MAX_RETRIES; attempt++) {
             try {
                 return executeInTransaction(request);
@@ -67,6 +77,7 @@ public class MarketOrderService {
     }
 
     private MarketOrderExecutionResult executeInTransaction(MarketOrderRequest request) {
+        // 注文受付から約定、ポジション、口座残高反映までを 1 トランザクションで確定させる。
         MarketOrderExecutionResult result = transactionTemplate.execute(status -> {
             Order order = new Order();
             order.setUserId(request.userId());
@@ -104,58 +115,33 @@ public class MarketOrderService {
     }
 
     /**
-     * 成行注文の約定結果をポジションに反映する（Upsert）。
-     *
-     * 仕様イメージ：
-     * - まず「反対サイドのポジション」があれば、注文数量と相殺（決済）する
-     *   - 相殺された数量分は損益を確定（realizePnl）
-     *   - 反対サイドが0になれば削除、残れば数量を減らして更新
-     * - 相殺しても注文数量が残った場合のみ「同サイドのポジション」を作成/更新する
-     *   - 同サイドが無ければ新規作成
-     *   - 同サイドがあれば数量を加算し、加重平均で平均価格を更新
-     *
-     * @param request         成行注文リクエスト（userId, currencyPair, side, quantity など）
-     * @param executionPrice  約定価格
-     * @return 処理後に更新されたポジション
-     *         - 注文が反対サイドの決済だけで終わった場合：反対サイドの更新後ポジション（または削除ならnull）
-     *         - 注文が残って同サイドを建てた場合：同サイドの更新後ポジション
+     * 約定結果を Position に反映する。
+     * 反対売買がある場合は先に相殺して realized PnL を口座へ反映し、
+     * 残数量がある場合だけ同方向の建玉を新規作成または加算する。
      */
     private Position upsertPosition(MarketOrderRequest request, BigDecimal executionPrice) {
-
-        // 1) 同サイド（同方向）の既存ポジションを取得（例：買い注文なら買いポジション）
         Position sameSidePosition = positionRepository
                 .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), request.side())
                 .orElse(null);
-
-        // 2) 反対サイド（逆方向）の既存ポジションを取得（例：買い注文なら売りポジション）
         Position oppositeSidePosition = positionRepository
                 .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), oppositeSide(request.side()))
                 .orElse(null);
 
-        // 注文数量のうち、相殺後にまだ「建てる必要がある」残数量
         BigDecimal remainingQuantity = request.quantity();
-
-        // 返却用（途中で反対サイドを更新した場合に返すため）
-        // ※このメソッドは状況により返すポジションが「反対サイド」or「同サイド」になり得る点に注意
         Position updatedPosition = sameSidePosition;
 
-        // 3) 反対サイドのポジションがある場合、まずは相殺（決済）を優先する
+        /*
+         * FX のネットポジションでは反対売買を両建てとして残さず、まず既存建玉を減らす。
+         * 減った数量分だけが realized PnL になり、ここで Account.balance に確定反映される。
+         */
         if (oppositeSidePosition != null) {
-
-            // 相殺できる数量 = min(注文残数量, 反対サイド数量)
             BigDecimal offsetQuantity = remainingQuantity.min(oppositeSidePosition.getQuantity());
-            
-            // 反対サイドの残数量 = 反対サイド数量 - 相殺数量
             BigDecimal oppositeRemaining = oppositeSidePosition.getQuantity().subtract(offsetQuantity);
-            
-            // 注文側の残数量 = 注文残数量 - 相殺数量
             remainingQuantity = remainingQuantity.subtract(offsetQuantity);
-            
-            // 相殺（決済）された数量分の損益を確定
             realizePnl(request.userId(), oppositeSidePosition, executionPrice, offsetQuantity);
 
-            // 反対サイドがゼロになったら削除、残っていれば数量を減らして更新
             if (oppositeRemaining.compareTo(BigDecimal.ZERO) == 0) {
+                // quantity=0 の行を残さず削除しておくと、一意制約と後続集計が素直になる。
                 positionRepository.delete(oppositeSidePosition);
                 updatedPosition = null;
             } else {
@@ -164,31 +150,25 @@ public class MarketOrderService {
             }
         }
 
-        // 4) 相殺だけで注文数量が全部消化された場合はここで終了（＝新規建て無し）
         if (remainingQuantity.compareTo(BigDecimal.ZERO) == 0) {
             return updatedPosition;
         }
 
-        // 5) ここまで来たら「注文数量が残っている」＝同サイドに建てる処理が必要
-
-        // 5-1) 同サイドポジションが無ければ新規作成して保存
         if (sameSidePosition == null) {
             Position newPosition = createNewPosition(request, executionPrice, remainingQuantity);
             return positionRepository.saveAndFlush(newPosition);
         }
 
-        // 5-2) 同サイドが既にある場合は、数量を加算し平均価格を加重平均で更新
+        // 同方向への積み増しは平均取得単価を加重平均で持ち直す。
         BigDecimal newQuantity = sameSidePosition.getQuantity().add(remainingQuantity);
         BigDecimal newAvgPrice = weightedAverage(
-                sameSidePosition.getAvgPrice(), // 既存平均価格
-                sameSidePosition.getQuantity(), // 既存数量
-                executionPrice,                 // 今回の約定価格
-                remainingQuantity               // 今回の建て増し数量
+                sameSidePosition.getAvgPrice(),
+                sameSidePosition.getQuantity(),
+                executionPrice,
+                remainingQuantity
         );
         sameSidePosition.setQuantity(newQuantity);
         sameSidePosition.setAvgPrice(newAvgPrice);
-
-        // 更新して返却
         return positionRepository.saveAndFlush(sameSidePosition);
     }
 
@@ -211,6 +191,7 @@ public class MarketOrderService {
     }
 
     private BigDecimal resolveMarketPrice(String currencyPair, OrderSide side) {
+        // 成行約定価格は BUY=Ask、SELL=Bid を使う。
         if (!USD_JPY.equals(currencyPair)) {
             throw new IllegalArgumentException("Only USD/JPY is supported");
         }
@@ -235,6 +216,7 @@ public class MarketOrderService {
                             Position oppositeSidePosition,
                             BigDecimal executionPrice,
                             BigDecimal offsetQuantity) {
+        // 新規建て部分は未実現損益のまま残し、相殺された数量分だけを口座残高へ確定させる。
         if (offsetQuantity.compareTo(BigDecimal.ZERO) <= 0) {
             return;
         }
@@ -250,6 +232,7 @@ public class MarketOrderService {
     private BigDecimal calculateRealizedPnl(Position oppositeSidePosition,
                                             BigDecimal executionPrice,
                                             BigDecimal offsetQuantity) {
+        // 取得原価(avgPrice) と決済単価(executionPrice) の差を、閉じた数量分だけ確定損益にする。
         if (oppositeSidePosition.getSide() == OrderSide.BUY) {
             return executionPrice.subtract(oppositeSidePosition.getAvgPrice()).multiply(offsetQuantity);
         }

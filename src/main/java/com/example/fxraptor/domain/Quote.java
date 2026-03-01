@@ -7,6 +7,10 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
+/**
+ * 通貨ペアの現在レート。
+ * FX では Bid/Ask が異なるため、約定価格と評価損益で side に応じて使い分ける。
+ */
 @Entity
 @Table(name = "quotes")
 public class Quote {

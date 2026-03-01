@@ -13,6 +13,10 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * 実際に成立した約定。
+ * 後続の建玉更新や損益計算は、注文要求ではなくこの確定事実を基準に行う。
+ */
 @Entity
 @Table(name = "trades")
 public class Trade {

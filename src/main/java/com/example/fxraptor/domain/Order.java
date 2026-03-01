@@ -13,6 +13,10 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * ユーザーが出した注文の受付記録。
+ * 約定結果とは分離し、Order は「何を出したか」、Trade は「どう成立したか」を表す。
+ */
 @Entity
 @Table(name = "orders")
 public class Order {

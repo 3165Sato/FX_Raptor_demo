@@ -29,6 +29,7 @@ class MarginServiceTest {
 
     @Test
     void calculatesRequiredEffectiveAndMaintenanceMargins() {
+        // 証拠金の3指標が、必要証拠金と未実現損益の集計ルールどおりに計算されることを確認する。
         MarginService marginService = new MarginService(marketOrderService);
         Account account = account("10000.0000", "JPY");
         Position buyPosition = position("USD/JPY", OrderSide.BUY, "1000.00000000", "149.00000000");
@@ -51,6 +52,7 @@ class MarginServiceTest {
 
     @Test
     void usesBidForBuyAndAskForSellInUnrealizedPnl() {
+        // 評価損益では BUY=Bid、SELL=Ask を使うという FX 固有ルールを固定する。
         MarginService marginService = new MarginService(marketOrderService);
         Account account = account("0.0000", "JPY");
         Position buyPosition = position("USD/JPY", OrderSide.BUY, "1.00000000", "149.00000000");
@@ -70,6 +72,7 @@ class MarginServiceTest {
 
     @Test
     void rejectsAccountCurrencyThatDoesNotMatchQuoteCurrency() {
+        // このデモは通貨換算を持たないため、口座通貨と quote 通貨が不一致なら明示的に失敗させる。
         MarginService marginService = new MarginService(marketOrderService);
         Account account = account("10000.0000", "USD");
         Position position = position("USD/JPY", OrderSide.BUY, "1.00000000", "149.00000000");
@@ -87,6 +90,7 @@ class MarginServiceTest {
 
     @Test
     void issuesForcedMarketOrdersWhenMaintenanceRatioFallsBelowLiquidationRate() {
+        // ロスカットも特別処理ではなく、通常の成行注文フローへ委譲することを確認する。
         MarginService marginService = new MarginService(marketOrderService);
         Account account = account("1000.0000", "JPY");
         Position buyPosition = position("USD/JPY", OrderSide.BUY, "1000.00000000", "149.00000000");

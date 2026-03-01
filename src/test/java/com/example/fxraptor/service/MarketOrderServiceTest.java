@@ -54,6 +54,7 @@ class MarketOrderServiceTest {
 
     @Test
     void retriesPositionUpdateWhenOptimisticLockOccurs() {
+        // 楽観ロック競合時に最新建玉を読み直し、数量と平均価格を壊さず更新できることを保証する。
         MarketOrderService service = new MarketOrderService(
                 accountRepository,
                 orderRepository,
@@ -110,6 +111,7 @@ class MarketOrderServiceTest {
 
     @Test
     void retriesPositionInsertWhenConcurrentCreateHitsUniqueConstraint() {
+        // 初回建玉作成が競合しても、既存行へ合流して結果が壊れないことを確認する。
         MarketOrderService service = new MarketOrderService(
                 accountRepository,
                 orderRepository,
@@ -165,6 +167,7 @@ class MarketOrderServiceTest {
 
     @Test
     void offsetsOppositeSidePositionBeforeOpeningNewPosition() {
+        // 反対売買は両建てにせず既存建玉を減らし、その差額だけ realized PnL を口座へ反映する。
         MarketOrderService service = new MarketOrderService(
                 accountRepository,
                 orderRepository,
@@ -226,6 +229,7 @@ class MarketOrderServiceTest {
 
     @Test
     void deletesPositionAndUpdatesAccountWhenOppositePositionIsFullyClosed() {
+        // 全量決済時は quantity=0 の Position を残さず削除し、損益だけ残高へ反映する。
         MarketOrderService service = new MarketOrderService(
                 accountRepository,
                 orderRepository,

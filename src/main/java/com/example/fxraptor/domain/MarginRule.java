@@ -7,6 +7,10 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 
+/**
+ * 通貨ペアごとの証拠金ルール。
+ * leverage は必要証拠金、liquidationRate はロスカット判定に使う閾値を表す。
+ */
 @Entity
 @Table(name = "margin_rules")
 public class MarginRule {

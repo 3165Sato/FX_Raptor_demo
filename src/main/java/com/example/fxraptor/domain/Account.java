@@ -12,6 +12,10 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * 口座残高を保持する集約。
+ * realized PnL は balance に即時反映し、unrealized PnL は証拠金計算時にだけ加味する。
+ */
 @Entity
 @Table(name = "accounts")
 public class Account {
