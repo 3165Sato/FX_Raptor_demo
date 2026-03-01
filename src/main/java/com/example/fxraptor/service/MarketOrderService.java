@@ -1,26 +1,27 @@
 package com.example.fxraptor.service;
 
-import com.example.fxraptor.domain.Order;
-import com.example.fxraptor.domain.OrderSide;
-import com.example.fxraptor.domain.OrderStatus;
-import com.example.fxraptor.domain.OrderType;
-import com.example.fxraptor.domain.Position;
-import com.example.fxraptor.domain.Trade;
-import com.example.fxraptor.domain.Account;
-import com.example.fxraptor.repository.AccountRepository;
-import com.example.fxraptor.repository.OrderRepository;
-import com.example.fxraptor.repository.PositionRepository;
-import com.example.fxraptor.repository.TradeRepository;
-import com.example.fxraptor.service.dto.MarketOrderExecutionResult;
-import com.example.fxraptor.service.dto.MarketOrderRequest;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import com.example.fxraptor.domain.Account;
+import com.example.fxraptor.domain.Order;
+import com.example.fxraptor.domain.OrderSide;
+import com.example.fxraptor.domain.OrderStatus;
+import com.example.fxraptor.domain.OrderType;
+import com.example.fxraptor.domain.Position;
+import com.example.fxraptor.domain.Trade;
+import com.example.fxraptor.repository.AccountRepository;
+import com.example.fxraptor.repository.OrderRepository;
+import com.example.fxraptor.repository.PositionRepository;
+import com.example.fxraptor.repository.TradeRepository;
+import com.example.fxraptor.service.dto.MarketOrderExecutionResult;
+import com.example.fxraptor.service.dto.MarketOrderRequest;
 
 @Service
 public class MarketOrderService {
@@ -102,23 +103,58 @@ public class MarketOrderService {
         return result;
     }
 
+    /**
+     * 成行注文の約定結果をポジションに反映する（Upsert）。
+     *
+     * 仕様イメージ：
+     * - まず「反対サイドのポジション」があれば、注文数量と相殺（決済）する
+     *   - 相殺された数量分は損益を確定（realizePnl）
+     *   - 反対サイドが0になれば削除、残れば数量を減らして更新
+     * - 相殺しても注文数量が残った場合のみ「同サイドのポジション」を作成/更新する
+     *   - 同サイドが無ければ新規作成
+     *   - 同サイドがあれば数量を加算し、加重平均で平均価格を更新
+     *
+     * @param request         成行注文リクエスト（userId, currencyPair, side, quantity など）
+     * @param executionPrice  約定価格
+     * @return 処理後に更新されたポジション
+     *         - 注文が反対サイドの決済だけで終わった場合：反対サイドの更新後ポジション（または削除ならnull）
+     *         - 注文が残って同サイドを建てた場合：同サイドの更新後ポジション
+     */
     private Position upsertPosition(MarketOrderRequest request, BigDecimal executionPrice) {
+
+        // 1) 同サイド（同方向）の既存ポジションを取得（例：買い注文なら買いポジション）
         Position sameSidePosition = positionRepository
                 .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), request.side())
                 .orElse(null);
+
+        // 2) 反対サイド（逆方向）の既存ポジションを取得（例：買い注文なら売りポジション）
         Position oppositeSidePosition = positionRepository
                 .findByUserIdAndCurrencyPairAndSide(request.userId(), request.currencyPair(), oppositeSide(request.side()))
                 .orElse(null);
 
+        // 注文数量のうち、相殺後にまだ「建てる必要がある」残数量
         BigDecimal remainingQuantity = request.quantity();
+
+        // 返却用（途中で反対サイドを更新した場合に返すため）
+        // ※このメソッドは状況により返すポジションが「反対サイド」or「同サイド」になり得る点に注意
         Position updatedPosition = sameSidePosition;
 
+        // 3) 反対サイドのポジションがある場合、まずは相殺（決済）を優先する
         if (oppositeSidePosition != null) {
+
+            // 相殺できる数量 = min(注文残数量, 反対サイド数量)
             BigDecimal offsetQuantity = remainingQuantity.min(oppositeSidePosition.getQuantity());
+            
+            // 反対サイドの残数量 = 反対サイド数量 - 相殺数量
             BigDecimal oppositeRemaining = oppositeSidePosition.getQuantity().subtract(offsetQuantity);
+            
+            // 注文側の残数量 = 注文残数量 - 相殺数量
             remainingQuantity = remainingQuantity.subtract(offsetQuantity);
+            
+            // 相殺（決済）された数量分の損益を確定
             realizePnl(request.userId(), oppositeSidePosition, executionPrice, offsetQuantity);
 
+            // 反対サイドがゼロになったら削除、残っていれば数量を減らして更新
             if (oppositeRemaining.compareTo(BigDecimal.ZERO) == 0) {
                 positionRepository.delete(oppositeSidePosition);
                 updatedPosition = null;
@@ -128,24 +164,31 @@ public class MarketOrderService {
             }
         }
 
+        // 4) 相殺だけで注文数量が全部消化された場合はここで終了（＝新規建て無し）
         if (remainingQuantity.compareTo(BigDecimal.ZERO) == 0) {
             return updatedPosition;
         }
 
+        // 5) ここまで来たら「注文数量が残っている」＝同サイドに建てる処理が必要
+
+        // 5-1) 同サイドポジションが無ければ新規作成して保存
         if (sameSidePosition == null) {
             Position newPosition = createNewPosition(request, executionPrice, remainingQuantity);
             return positionRepository.saveAndFlush(newPosition);
         }
 
+        // 5-2) 同サイドが既にある場合は、数量を加算し平均価格を加重平均で更新
         BigDecimal newQuantity = sameSidePosition.getQuantity().add(remainingQuantity);
         BigDecimal newAvgPrice = weightedAverage(
-                sameSidePosition.getAvgPrice(),
-                sameSidePosition.getQuantity(),
-                executionPrice,
-                remainingQuantity
+                sameSidePosition.getAvgPrice(), // 既存平均価格
+                sameSidePosition.getQuantity(), // 既存数量
+                executionPrice,                 // 今回の約定価格
+                remainingQuantity               // 今回の建て増し数量
         );
         sameSidePosition.setQuantity(newQuantity);
         sameSidePosition.setAvgPrice(newAvgPrice);
+
+        // 更新して返却
         return positionRepository.saveAndFlush(sameSidePosition);
     }
 
