@@ -5,21 +5,26 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.repository.AccountRepository;
+import com.example.fxraptor.repository.MarginRuleRepository;
+import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.service.dto.MarginCalculationResult;
 import com.example.fxraptor.service.dto.MarketOrderRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 口座残高と建玉から証拠金関連の指標を計算するサービス。
- * 必要証拠金・有効証拠金・証拠金維持率を返し、維持率が liquidationRate を下回る場合は
- * 特別経路を作らず通常の成行注文フローでロスカットを発火する。
+ * 証拠金の計算とロスカット実行を担当するサービス。
+ * calculateResult は純計算のみ、liquidate は通常の成行注文フローを呼んで決済する。
  */
 @Service
 public class MarginService {
@@ -27,20 +32,39 @@ public class MarginService {
     private static final int MONEY_SCALE = 8;
     private static final int RATIO_SCALE = 4;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
-    private final MarketOrderService marketOrderService;
 
-    public MarginService(MarketOrderService marketOrderService) {
+    private final MarketOrderService marketOrderService;
+    private final QuoteService quoteService;
+    private final PositionRepository positionRepository;
+    private final MarginRuleRepository marginRuleRepository;
+    private final AccountRepository accountRepository;
+
+    public MarginService(MarketOrderService marketOrderService,
+                         QuoteService quoteService,
+                         PositionRepository positionRepository,
+                         MarginRuleRepository marginRuleRepository,
+                         AccountRepository accountRepository) {
         this.marketOrderService = marketOrderService;
+        this.quoteService = quoteService;
+        this.positionRepository = positionRepository;
+        this.marginRuleRepository = marginRuleRepository;
+        this.accountRepository = accountRepository;
     }
 
+    /**
+     * 互換用メソッド。副作用は持たず、純粋に計算だけを返す。
+     */
     public MarginCalculationResult calculate(Account account,
                                              List<Position> positions,
                                              List<Quote> quotes,
                                              List<MarginRule> marginRules) {
-        /*
-         * このデモは quote 通貨建てで損益計算する前提なので、
-         * まず入力がその前提を満たしているかを確認してから集計する。
-         */
+        return calculateResult(account, positions, quotes, marginRules);
+    }
+
+    public MarginCalculationResult calculateResult(Account account,
+                                                   List<Position> positions,
+                                                   List<Quote> quotes,
+                                                   List<MarginRule> marginRules) {
         validateAccount(account);
 
         Map<String, Quote> quoteByPair = indexByCurrencyPair(quotes, Quote::getCurrencyPair);
@@ -66,37 +90,98 @@ public class MarginService {
         }
 
         BigDecimal normalizedRequiredMargin = requiredMargin.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
-        BigDecimal effectiveMargin = account.getBalance().add(unrealizedPnl).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
-        BigDecimal marginMaintenanceRatio = calculateMarginMaintenanceRatio(effectiveMargin, normalizedRequiredMargin);
-        maybeForceLiquidate(account, positions, ruleByPair, marginMaintenanceRatio);
+        BigDecimal equity = account.getBalance().add(unrealizedPnl).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+        BigDecimal marginRatio = calculateMarginMaintenanceRatio(equity, normalizedRequiredMargin);
 
-        return new MarginCalculationResult(normalizedRequiredMargin, effectiveMargin, marginMaintenanceRatio);
+        return new MarginCalculationResult(normalizedRequiredMargin, equity, marginRatio);
     }
 
-    private void maybeForceLiquidate(Account account,
-                                     List<Position> positions,
-                                     Map<String, MarginRule> ruleByPair,
-                                     BigDecimal marginMaintenanceRatio) {
-        // ロスカットも通常の成行注文として流すことで、約定・相殺・残高更新の経路を 1 つに保つ。
-        if (!isLiquidationTriggered(positions, ruleByPair, marginMaintenanceRatio)) {
+    public boolean shouldLiquidate(List<Position> positions,
+                                   List<MarginRule> marginRules,
+                                   MarginCalculationResult result) {
+        if (positions == null || positions.isEmpty()) {
+            return false;
+        }
+        if (result.marginMaintenanceRatio() == null) {
+            return false;
+        }
+
+        Map<String, MarginRule> ruleByPair = indexByCurrencyPair(marginRules, MarginRule::getCurrencyPair);
+        BigDecimal threshold = BigDecimal.ZERO;
+        for (Position position : positions) {
+            MarginRule rule = requireMarginRule(ruleByPair, position.getCurrencyPair());
+            BigDecimal pairThreshold = rule.getLiquidationRate().multiply(HUNDRED);
+            if (pairThreshold.compareTo(threshold) > 0) {
+                threshold = pairThreshold;
+            }
+        }
+        return result.marginMaintenanceRatio().compareTo(threshold.setScale(RATIO_SCALE, RoundingMode.HALF_UP)) < 0;
+    }
+
+    /**
+     * 対象口座の建玉を notional 降順に決済し、1回ごとに再計算して閾値回復なら停止する。
+     */
+    public void liquidate(Account account) {
+        if (account == null) {
             return;
         }
 
-        for (Position position : positions) {
-            if (position.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
+        while (true) {
+            Account latestAccount = accountRepository.findByUserId(account.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("account not found for userId: " + account.getUserId()));
+            List<Position> positions = positionRepository.findAllByUserId(latestAccount.getUserId());
+            if (positions.isEmpty()) {
+                return;
             }
+
+            List<Quote> quotes = loadQuotes(positions);
+            List<MarginRule> rules = loadMarginRules(positions);
+            MarginCalculationResult result = calculateResult(latestAccount, positions, quotes, rules);
+            if (!shouldLiquidate(positions, rules, result)) {
+                return;
+            }
+
+            Map<String, Quote> quoteByPair = indexByCurrencyPair(quotes, Quote::getCurrencyPair);
+            List<Position> sortedByNotional = new ArrayList<>(positions);
+            sortedByNotional.sort(Comparator.comparing(
+                    (Position position) -> positionNotional(position, quoteByPair.get(position.getCurrencyPair()))
+            ).reversed());
+
+            Position target = sortedByNotional.get(0);
             marketOrderService.execute(new MarketOrderRequest(
-                    account.getUserId(),
-                    position.getCurrencyPair(),
-                    oppositeSide(position.getSide()),
-                    position.getQuantity()
+                    latestAccount.getUserId(),
+                    target.getCurrencyPair(),
+                    oppositeSide(target.getSide()),
+                    target.getQuantity()
             ));
         }
     }
 
+    private BigDecimal positionNotional(Position position, Quote quote) {
+        BigDecimal markPrice = resolveMarkPrice(position.getSide(), quote);
+        return markPrice.multiply(position.getQuantity());
+    }
+
+    private List<Quote> loadQuotes(List<Position> positions) {
+        Map<String, Quote> byPair = new LinkedHashMap<>();
+        for (Position position : positions) {
+            byPair.putIfAbsent(position.getCurrencyPair(), quoteService.getQuote(position.getCurrencyPair()));
+        }
+        return new ArrayList<>(byPair.values());
+    }
+
+    private List<MarginRule> loadMarginRules(List<Position> positions) {
+        Map<String, MarginRule> byPair = new LinkedHashMap<>();
+        for (Position position : positions) {
+            String pair = position.getCurrencyPair();
+            MarginRule rule = marginRuleRepository.findById(pair)
+                    .orElseThrow(() -> new IllegalArgumentException("margin rule not found for " + pair));
+            byPair.putIfAbsent(pair, rule);
+        }
+        return new ArrayList<>(byPair.values());
+    }
+
     private BigDecimal calculateUnrealizedPnl(Position position, Quote quote) {
-        // 未実現損益は「今決済したらいくらになるか」で評価するため、BUY=Bid、SELL=Ask を使う。
         BigDecimal closingPrice = resolveMarkPrice(position.getSide(), quote);
         BigDecimal priceDiff = position.getSide() == OrderSide.BUY
                 ? closingPrice.subtract(position.getAvgPrice())
@@ -108,30 +193,12 @@ public class MarginService {
         return side == OrderSide.BUY ? quote.getBid() : quote.getAsk();
     }
 
-    private BigDecimal calculateMarginMaintenanceRatio(BigDecimal effectiveMargin, BigDecimal requiredMargin) {
-        // 建玉ゼロ時に 0 除算を避け、呼び出し側で扱いやすい 0% を返す。
+    private BigDecimal calculateMarginMaintenanceRatio(BigDecimal equity, BigDecimal requiredMargin) {
+        // 建玉なし(requiredMargin=0)は維持率N/A扱いにする。
         if (requiredMargin.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO.setScale(RATIO_SCALE, RoundingMode.HALF_UP);
+            return null;
         }
-        return effectiveMargin
-                .multiply(HUNDRED)
-                .divide(requiredMargin, RATIO_SCALE, RoundingMode.HALF_UP);
-    }
-
-    private boolean isLiquidationTriggered(List<Position> positions,
-                                           Map<String, MarginRule> ruleByPair,
-                                           BigDecimal marginMaintenanceRatio) {
-        // liquidationRate は 0.3000 = 30% で保持しているので、維持率比較時に百分率へ合わせる。
-        for (Position position : positions) {
-            MarginRule marginRule = requireMarginRule(ruleByPair, position.getCurrencyPair());
-            BigDecimal liquidationThreshold = marginRule.getLiquidationRate()
-                    .multiply(HUNDRED)
-                    .setScale(RATIO_SCALE, RoundingMode.HALF_UP);
-            if (marginMaintenanceRatio.compareTo(liquidationThreshold) < 0) {
-                return true;
-            }
-        }
-        return false;
+        return equity.multiply(HUNDRED).divide(requiredMargin, RATIO_SCALE, RoundingMode.HALF_UP);
     }
 
     private void validateAccount(Account account) {
@@ -162,7 +229,6 @@ public class MarginService {
     }
 
     private void validateAccountCurrency(Account account, String currencyPair) {
-        // このデモは通貨換算を持たないため、口座通貨と quote 通貨の一致を前提とする。
         String[] currencies = currencyPair.split("/");
         if (currencies.length != 2) {
             throw new IllegalArgumentException("currencyPair must be in BASE/QUOTE format");
@@ -203,7 +269,6 @@ public class MarginService {
     }
 
     private <T> Map<String, T> indexByCurrencyPair(List<T> values, Function<T, String> keyExtractor) {
-        // ルールやレートを都度線形探索しないよう、通貨ペアで即引ける形にしておく。
         if (values == null) {
             throw new IllegalArgumentException("values must not be null");
         }

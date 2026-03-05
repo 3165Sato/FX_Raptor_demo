@@ -1,4 +1,6 @@
+com\example\fxraptor\repository\MarginRuleRepository.class
 com\example\fxraptor\repository\PositionRepository.class
+com\example\fxraptor\service\ValuationScheduler.class
 com\example\fxraptor\domain\OrderSide.class
 com\example\fxraptor\service\dto\MarketOrderExecutionResult.class
 com\example\fxraptor\repository\OrderRepository.class
