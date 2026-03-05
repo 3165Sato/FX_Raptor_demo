@@ -1,3 +1,4 @@
-com\example\fxraptor\service\MarginServiceTest.class
 com\example\fxraptor\service\MarketOrderServiceTest$NoOpTransactionManager.class
+com\example\fxraptor\service\QuoteSimulatorTest.class
+com\example\fxraptor\service\MarginServiceTest.class
 com\example\fxraptor\service\MarketOrderServiceTest.class

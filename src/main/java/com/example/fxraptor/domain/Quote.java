@@ -6,10 +6,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 /**
  * 通貨ペアの現在レート。
- * FX では Bid/Ask が異なるため、約定価格と評価損益で side に応じて使い分ける。
+ * FXではBid/Askが異なるため、約定価格や評価損益はsideに応じて使い分ける。
  */
 @Entity
 @Table(name = "quotes")
@@ -24,6 +25,9 @@ public class Quote {
 
     @Column(nullable = false, precision = 19, scale = 8)
     private BigDecimal ask;
+
+    @Column(nullable = false)
+    private Instant timestamp;
 
     public String getCurrencyPair() {
         return currencyPair;
@@ -47,5 +51,13 @@ public class Quote {
 
     public void setAsk(BigDecimal ask) {
         this.ask = ask;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
     }
 }
