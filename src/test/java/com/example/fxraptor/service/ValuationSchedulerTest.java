@@ -68,7 +68,7 @@ class ValuationSchedulerTest {
         when(marginService.calculateResult(account, List.of(position), List.of(quote), List.of(rule))).thenReturn(result);
         when(marginService.shouldLiquidate(List.of(position), List.of(rule), result)).thenReturn(true);
 
-        scheduler.valuateAllAccounts();
+        scheduler.runValuationCycle();
 
         verify(marginService).liquidate(account);
     }
@@ -87,7 +87,7 @@ class ValuationSchedulerTest {
         when(accountRepository.findAll()).thenReturn(List.of(account));
         when(positionRepository.findAllByUserId("user-2")).thenReturn(List.of());
 
-        scheduler.valuateAllAccounts();
+        scheduler.runValuationCycle();
 
         verify(marginService, never()).liquidate(account);
     }

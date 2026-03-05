@@ -42,6 +42,10 @@ public class ValuationScheduler {
 
     @Scheduled(fixedRate = 1000)
     public void valuateAllAccounts() {
+        runValuationCycle();
+    }
+
+    public void runValuationCycle() {
         for (Account account : accountRepository.findAll()) {
             List<Position> positions = positionRepository.findAllByUserId(account.getUserId());
             if (positions.isEmpty()) {

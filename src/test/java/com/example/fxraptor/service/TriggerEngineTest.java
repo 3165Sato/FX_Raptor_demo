@@ -63,6 +63,26 @@ class TriggerEngineTest {
     }
 
     @Test
+    void firesStopSellWhenBidCrossesTriggerPrice() {
+        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, marketOrderService);
+        TriggerOrder order = triggerOrder(2L, 10L, "USD/JPY", OrderSide.SELL, TriggerType.STOP, "149.90");
+        Quote quote = quote("USD/JPY", "149.90", "149.95");
+        Account account = account(10L, "user-1");
+
+        when(triggerOrderRepository.findAllByStatus(TriggerStatus.ACTIVE)).thenReturn(List.of(order));
+        when(quoteService.getQuote("USD/JPY")).thenReturn(quote);
+        when(triggerOrderRepository.updateStatusIfCurrent(any(), any(), any(), any())).thenReturn(1);
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+
+        engine.evaluateActiveTriggersNow();
+
+        ArgumentCaptor<MarketOrderRequest> captor = ArgumentCaptor.forClass(MarketOrderRequest.class);
+        verify(marketOrderService).execute(captor.capture());
+        assertThat(captor.getValue().side()).isEqualTo(OrderSide.SELL);
+        assertThat(captor.getValue().quantity()).isEqualByComparingTo("1.00000000");
+    }
+
+    @Test
     void usesBidAskRulesForAllTriggerTypes() {
         TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, marketOrderService);
 

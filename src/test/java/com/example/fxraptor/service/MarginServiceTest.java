@@ -151,6 +151,32 @@ class MarginServiceTest {
         assertThat(request.quantity()).isEqualByComparingTo("1000.00000000");
     }
 
+    @Test
+    void liquidationFlowsThroughForcedMarketOrdersUntilPositionsDisappear() {
+        MarginService marginService = service();
+
+        Account account = account("user-1", "0.0000", "JPY");
+        Position large = position("user-1", "USD/JPY", OrderSide.BUY, "1000.00000000", "149.00000000");
+        Position small = position("user-1", "USD/JPY", OrderSide.BUY, "100.00000000", "149.00000000");
+        Quote quote = quote("USD/JPY", "150.00000000", "150.00000000");
+        MarginRule marginRule = marginRule("USD/JPY", "25.00", "0.3000");
+
+        when(accountRepository.findByUserId("user-1"))
+                .thenReturn(Optional.of(account), Optional.of(account), Optional.of(account));
+        when(positionRepository.findAllByUserId("user-1"))
+                .thenReturn(List.of(large, small), List.of(small), List.of());
+        when(quoteService.getQuote("USD/JPY")).thenReturn(quote);
+        when(marginRuleRepository.findById("USD/JPY")).thenReturn(Optional.of(marginRule));
+
+        marginService.liquidate(account);
+
+        ArgumentCaptor<MarketOrderRequest> requestCaptor = ArgumentCaptor.forClass(MarketOrderRequest.class);
+        verify(marketOrderService, times(2)).execute(requestCaptor.capture());
+        List<MarketOrderRequest> requests = requestCaptor.getAllValues();
+        assertThat(requests.get(0).quantity()).isEqualByComparingTo("1000.00000000");
+        assertThat(requests.get(1).quantity()).isEqualByComparingTo("100.00000000");
+    }
+
     private MarginService service() {
         return new MarginService(
                 marketOrderService,
