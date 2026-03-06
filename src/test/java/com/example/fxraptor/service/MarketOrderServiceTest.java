@@ -28,12 +28,13 @@ import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
+import com.example.fxraptor.order.model.MarketOrderExecutionResult;
+import com.example.fxraptor.order.model.MarketOrderRequest;
+import com.example.fxraptor.order.service.MarketOrderService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.OrderRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.repository.TradeRepository;
-import com.example.fxraptor.service.dto.MarketOrderExecutionResult;
-import com.example.fxraptor.service.dto.MarketOrderRequest;
 
 @ExtendWith(MockitoExtension.class)
 class MarketOrderServiceTest {

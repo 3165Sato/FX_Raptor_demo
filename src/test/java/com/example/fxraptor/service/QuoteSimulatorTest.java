@@ -1,6 +1,8 @@
 package com.example.fxraptor.service;
 
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.quote.QuoteSimulator;
+import com.example.fxraptor.quote.QuoteStore;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
