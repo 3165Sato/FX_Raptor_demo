@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * ACTIVEなトリガー注文を監視し、成立時に内部成行注文を発行するエンジン。
@@ -48,6 +49,18 @@ public class TriggerEngine {
     @Transactional
     public void evaluateActiveTriggersNow() {
         List<TriggerOrder> activeOrders = triggerOrderRepository.findAllByStatus(TriggerStatus.ACTIVE);
+        evaluate(activeOrders);
+    }
+
+    @Transactional
+    public void evaluateActiveTriggersByCurrencyPair(String currencyPair) {
+        List<TriggerOrder> filtered = triggerOrderRepository.findAllByStatus(TriggerStatus.ACTIVE).stream()
+                .filter(order -> order.getCurrencyPair().equals(currencyPair))
+                .collect(Collectors.toList());
+        evaluate(filtered);
+    }
+
+    private void evaluate(List<TriggerOrder> activeOrders) {
         for (TriggerOrder order : activeOrders) {
             Quote quote = quoteService.getQuote(order.getCurrencyPair());
             if (!isTriggered(order, quote)) {
