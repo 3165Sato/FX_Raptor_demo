@@ -6,8 +6,8 @@ import com.example.fxraptor.domain.Quote;
 import com.example.fxraptor.domain.TriggerOrder;
 import com.example.fxraptor.domain.TriggerStatus;
 import com.example.fxraptor.domain.TriggerType;
-import com.example.fxraptor.order.model.MarketOrderRequest;
-import com.example.fxraptor.order.service.MarketOrderService;
+import com.example.fxraptor.order.engine.OrderEngine;
+import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.TriggerOrderRepository;
@@ -29,16 +29,16 @@ public class TriggerEngine {
     private final TriggerOrderRepository triggerOrderRepository;
     private final QuoteService quoteService;
     private final AccountRepository accountRepository;
-    private final MarketOrderService marketOrderService;
+    private final OrderEngine orderEngine;
 
     public TriggerEngine(TriggerOrderRepository triggerOrderRepository,
                          QuoteService quoteService,
                          AccountRepository accountRepository,
-                         MarketOrderService marketOrderService) {
+                         OrderEngine orderEngine) {
         this.triggerOrderRepository = triggerOrderRepository;
         this.quoteService = quoteService;
         this.accountRepository = accountRepository;
-        this.marketOrderService = marketOrderService;
+        this.orderEngine = orderEngine;
     }
 
     @Scheduled(fixedRate = 1000)
@@ -79,12 +79,11 @@ public class TriggerEngine {
 
             Account account = accountRepository.findById(order.getAccountId())
                     .orElseThrow(() -> new IllegalArgumentException("account not found for id: " + order.getAccountId()));
-            marketOrderService.execute(new MarketOrderRequest(
+            orderEngine.executeMarketOrder(new MarketOrderCommand(
                     account.getUserId(),
                     order.getCurrencyPair(),
                     order.getSide(),
-                    order.getQuantity()
-            ));
+                    order.getQuantity()));
         }
     }
 

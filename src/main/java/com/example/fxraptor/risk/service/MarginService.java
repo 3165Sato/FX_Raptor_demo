@@ -5,11 +5,11 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.order.engine.OrderEngine;
+import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
-import com.example.fxraptor.order.model.MarketOrderRequest;
-import com.example.fxraptor.order.service.MarketOrderService;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
 import org.springframework.stereotype.Service;
@@ -35,18 +35,18 @@ public class MarginService {
     private static final int RATIO_SCALE = 4;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
-    private final MarketOrderService marketOrderService;
+    private final OrderEngine orderEngine;
     private final QuoteService quoteService;
     private final PositionRepository positionRepository;
     private final MarginRuleRepository marginRuleRepository;
     private final AccountRepository accountRepository;
 
-    public MarginService(MarketOrderService marketOrderService,
+    public MarginService(OrderEngine orderEngine,
                          QuoteService quoteService,
                          PositionRepository positionRepository,
                          MarginRuleRepository marginRuleRepository,
                          AccountRepository accountRepository) {
-        this.marketOrderService = marketOrderService;
+        this.orderEngine = orderEngine;
         this.quoteService = quoteService;
         this.positionRepository = positionRepository;
         this.marginRuleRepository = marginRuleRepository;
@@ -150,12 +150,11 @@ public class MarginService {
             ).reversed());
 
             Position target = sortedByNotional.get(0);
-            marketOrderService.execute(new MarketOrderRequest(
+            orderEngine.executeMarketOrder(new MarketOrderCommand(
                     latestAccount.getUserId(),
                     target.getCurrencyPair(),
                     oppositeSide(target.getSide()),
-                    target.getQuantity()
-            ));
+                    target.getQuantity()));
         }
     }
 

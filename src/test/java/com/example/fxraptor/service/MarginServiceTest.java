@@ -5,8 +5,8 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
-import com.example.fxraptor.order.model.MarketOrderRequest;
-import com.example.fxraptor.order.service.MarketOrderService;
+import com.example.fxraptor.order.engine.OrderEngine;
+import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.MarginRuleRepository;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 class MarginServiceTest {
 
     @Mock
-    private MarketOrderService marketOrderService;
+    private OrderEngine orderEngine;
 
     @Mock
     private QuoteService quoteService;
@@ -69,7 +69,7 @@ class MarginServiceTest {
         assertThat(result.requiredMargin()).isEqualByComparingTo("9000.00000000");
         assertThat(result.effectiveMargin()).isEqualByComparingTo("11500.00000000");
         assertThat(result.marginMaintenanceRatio()).isEqualByComparingTo("127.7778");
-        verify(marketOrderService, never()).execute(any(MarketOrderRequest.class));
+        verify(orderEngine, never()).executeMarketOrder(any(MarketOrderCommand.class));
     }
 
     @Test
@@ -146,9 +146,9 @@ class MarginServiceTest {
 
         marginService.liquidate(initialAccount);
 
-        ArgumentCaptor<MarketOrderRequest> requestCaptor = ArgumentCaptor.forClass(MarketOrderRequest.class);
-        verify(marketOrderService, times(1)).execute(requestCaptor.capture());
-        MarketOrderRequest request = requestCaptor.getValue();
+        ArgumentCaptor<MarketOrderCommand> requestCaptor = ArgumentCaptor.forClass(MarketOrderCommand.class);
+        verify(orderEngine, times(1)).executeMarketOrder(requestCaptor.capture());
+        MarketOrderCommand request = requestCaptor.getValue();
         assertThat(request.currencyPair()).isEqualTo("USD/JPY");
         assertThat(request.side()).isEqualTo(OrderSide.SELL);
         assertThat(request.quantity()).isEqualByComparingTo("1000.00000000");
@@ -173,16 +173,16 @@ class MarginServiceTest {
 
         marginService.liquidate(account);
 
-        ArgumentCaptor<MarketOrderRequest> requestCaptor = ArgumentCaptor.forClass(MarketOrderRequest.class);
-        verify(marketOrderService, times(2)).execute(requestCaptor.capture());
-        List<MarketOrderRequest> requests = requestCaptor.getAllValues();
+        ArgumentCaptor<MarketOrderCommand> requestCaptor = ArgumentCaptor.forClass(MarketOrderCommand.class);
+        verify(orderEngine, times(2)).executeMarketOrder(requestCaptor.capture());
+        List<MarketOrderCommand> requests = requestCaptor.getAllValues();
         assertThat(requests.get(0).quantity()).isEqualByComparingTo("1000.00000000");
         assertThat(requests.get(1).quantity()).isEqualByComparingTo("100.00000000");
     }
 
     private MarginService service() {
         return new MarginService(
-                marketOrderService,
+                orderEngine,
                 quoteService,
                 positionRepository,
                 marginRuleRepository,
