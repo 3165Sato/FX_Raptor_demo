@@ -13,6 +13,13 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\do
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\TriggerStatus.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\TriggerType.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\infra\SchedulingConfig.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\engine\MarketDataEngine.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\model\AggregatedQuote.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\model\NormalizedQuote.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\model\RawQuote.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\service\OneSecondAggregator.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\service\QuoteNormalizer.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\service\TickDispatcher.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\engine\OrderEngine.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\MarketOrderCommand.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\MarketOrderExecutionResult.java

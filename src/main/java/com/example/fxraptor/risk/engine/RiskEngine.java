@@ -4,6 +4,7 @@ import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.marketdata.model.AggregatedQuote;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
@@ -56,8 +57,24 @@ public class RiskEngine {
 
     public void onQuoteUpdated(String currencyPair) {
         triggerEngine.evaluateActiveTriggersByCurrencyPair(currencyPair);
-
         Quote quote = quoteService.getQuote(currencyPair);
+        evaluateLiquidationByPair(currencyPair, quote);
+    }
+
+    /**
+     * 1秒集約足で値洗い・ロスカット判定を実行する。
+     * close値を現在価格として評価し、必要なら内部注文を発行する。
+     */
+    public void onSecondQuote(AggregatedQuote aggregatedQuote) {
+        Quote quote = new Quote();
+        quote.setCurrencyPair(aggregatedQuote.currencyPair());
+        quote.setBid(aggregatedQuote.closeBid());
+        quote.setAsk(aggregatedQuote.closeAsk());
+        quote.setTimestamp(aggregatedQuote.second());
+        evaluateLiquidationByPair(aggregatedQuote.currencyPair(), quote);
+    }
+
+    private void evaluateLiquidationByPair(String currencyPair, Quote quote) {
         Optional<MarginRule> maybeRule = marginRuleRepository.findById(currencyPair);
         if (maybeRule.isEmpty()) {
             return;
@@ -83,7 +100,6 @@ public class RiskEngine {
                 commands.addAll(liquidationService.createInternalCommands(account, positions, quote));
             }
         }
-
         if (!commands.isEmpty()) {
             internalOrderCommandService.dispatch(commands);
         }

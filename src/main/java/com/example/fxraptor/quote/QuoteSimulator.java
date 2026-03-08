@@ -1,6 +1,8 @@
 package com.example.fxraptor.quote;
 
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.marketdata.engine.MarketDataEngine;
+import com.example.fxraptor.marketdata.model.RawQuote;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +19,18 @@ public class QuoteSimulator {
 
     private static final BigDecimal STEP = new BigDecimal("0.01");
     private final QuoteStore quoteStore;
+    private final MarketDataEngine marketDataEngine;
     private final AtomicInteger tick = new AtomicInteger(0);
 
+    public QuoteSimulator(QuoteStore quoteStore, MarketDataEngine marketDataEngine) {
+        this.quoteStore = quoteStore;
+        this.marketDataEngine = marketDataEngine;
+    }
+
+    // ユニットテスト向け互換コンストラクタ
     public QuoteSimulator(QuoteStore quoteStore) {
         this.quoteStore = quoteStore;
+        this.marketDataEngine = null;
     }
 
     @Scheduled(fixedRate = 1000)
@@ -35,7 +45,11 @@ public class QuoteSimulator {
             BigDecimal spread = current.getAsk().subtract(current.getBid());
             BigDecimal nextBid = current.getBid().add(delta);
             BigDecimal nextAsk = nextBid.add(spread);
-            quoteStore.updateQuote(current.getCurrencyPair(), nextBid, nextAsk, now);
+            if (marketDataEngine != null) {
+                marketDataEngine.onTick(new RawQuote(current.getCurrencyPair(), nextBid, nextAsk, now));
+            } else {
+                quoteStore.updateQuote(current.getCurrencyPair(), nextBid, nextAsk, now);
+            }
         }
     }
 }
