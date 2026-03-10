@@ -1,3 +1,4 @@
+com\example\fxraptor\api\controller\InvestorApiController.class
 com\example\fxraptor\domain\CoverOrderStatus.class
 com\example\fxraptor\domain\OrderSide.class
 com\example\fxraptor\risk\service\TriggerEngine.class
@@ -20,6 +21,8 @@ com\example\fxraptor\marketdata\model\NormalizedQuote.class
 com\example\fxraptor\repository\CoverExecutionLogRepository.class
 com\example\fxraptor\repository\PositionRepository.class
 com\example\fxraptor\repository\TriggerOrderRepository.class
+com\example\fxraptor\api\dto\MarketOrderResponseDto.class
+com\example\fxraptor\api\dto\TriggerOrderResponseDto.class
 com\example\fxraptor\backoffice\service\OrderQueryService.class
 com\example\fxraptor\backoffice\service\TradeQueryService.class
 com\example\fxraptor\domain\CoverExecutionResult.class
@@ -39,13 +42,17 @@ com\example\fxraptor\marketdata\model\RawQuote.class
 com\example\fxraptor\domain\CoverMode.class
 com\example\fxraptor\domain\LiquidationLog.class
 com\example\fxraptor\quote\QuoteSimulator.class
+com\example\fxraptor\api\dto\PositionResponseDto.class
 com\example\fxraptor\domain\OrderStatus.class
 com\example\fxraptor\domain\Account.class
 com\example\fxraptor\risk\engine\RiskEngine.class
 com\example\fxraptor\domain\Order.class
+com\example\fxraptor\api\dto\OrderResponseDto.class
+com\example\fxraptor\api\dto\AccountResponseDto.class
 com\example\fxraptor\order\model\MarketOrderRequest.class
 com\example\fxraptor\order\model\NettingResult.class
 com\example\fxraptor\repository\TradeRepository.class
+com\example\fxraptor\api\dto\CreateTriggerOrderRequestDto.class
 com\example\fxraptor\order\model\CoverOrderCommand.class
 com\example\fxraptor\repository\LiquidationLogRepository.class
 com\example\fxraptor\domain\Quote.class
@@ -55,6 +62,7 @@ com\example\fxraptor\backoffice\controller\AdminQueryController.class
 com\example\fxraptor\backoffice\service\CoverOrderQueryService.class
 com\example\fxraptor\marketdata\model\AggregatedQuote.class
 com\example\fxraptor\marketdata\service\OneSecondAggregator.class
+com\example\fxraptor\api\dto\TradeResponseDto.class
 com\example\fxraptor\backoffice\service\LiquidationQueryService.class
 com\example\fxraptor\order\service\MarketOrderService.class
 com\example\fxraptor\backoffice\service\PositionQueryService.class
@@ -64,8 +72,10 @@ com\example\fxraptor\order\service\AccountService.class
 com\example\fxraptor\infra\event\LiquidationRequestedEvent.class
 com\example\fxraptor\infra\event\OneSecondAggregatedEvent.class
 com\example\fxraptor\repository\OrderRepository.class
+com\example\fxraptor\api\dto\MarketOrderRequestDto.class
 com\example\fxraptor\cache\AccountCache.class
 com\example\fxraptor\order\model\MarketOrderCommand.class
+com\example\fxraptor\risk\service\TriggerOrderService.class
 com\example\fxraptor\domain\Position.class
 com\example\fxraptor\domain\Trade.class
 com\example\fxraptor\domain\CoverOrder.class
