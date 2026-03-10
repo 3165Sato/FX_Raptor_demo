@@ -2,7 +2,8 @@ package com.example.fxraptor.marketdata.service;
 
 import com.example.fxraptor.marketdata.model.AggregatedQuote;
 import com.example.fxraptor.marketdata.model.NormalizedQuote;
-import com.example.fxraptor.risk.engine.RiskEngine;
+import com.example.fxraptor.infra.event.OneSecondAggregatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -17,10 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OneSecondAggregator {
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
-    private final RiskEngine riskEngine;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public OneSecondAggregator(RiskEngine riskEngine) {
-        this.riskEngine = riskEngine;
+    public OneSecondAggregator(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     public void add(NormalizedQuote quote) {
@@ -31,11 +32,26 @@ public class OneSecondAggregator {
             return;
         }
         if (currentBucket.epochSecond != epochSecond) {
-            riskEngine.onSecondQuote(currentBucket.toAggregatedQuote(quote.currencyPair()));
+            publishOneSecondEvent(currentBucket.toAggregatedQuote(quote.currencyPair()));
             buckets.put(quote.currencyPair(), Bucket.from(quote, epochSecond));
             return;
         }
         currentBucket.accept(quote);
+    }
+
+    private void publishOneSecondEvent(AggregatedQuote quote) {
+        Instant start = quote.second();
+        eventPublisher.publishEvent(new OneSecondAggregatedEvent(
+                quote.currencyPair(),
+                quote.highBid(),
+                quote.lowBid(),
+                quote.closeBid(),
+                quote.highAsk(),
+                quote.lowAsk(),
+                quote.closeAsk(),
+                start,
+                start.plusSeconds(1)
+        ));
     }
 
     private static final class Bucket {

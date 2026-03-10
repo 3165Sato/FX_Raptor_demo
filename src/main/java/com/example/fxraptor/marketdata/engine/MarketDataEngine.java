@@ -4,8 +4,9 @@ import com.example.fxraptor.marketdata.model.NormalizedQuote;
 import com.example.fxraptor.marketdata.model.RawQuote;
 import com.example.fxraptor.marketdata.service.OneSecondAggregator;
 import com.example.fxraptor.marketdata.service.QuoteNormalizer;
-import com.example.fxraptor.marketdata.service.TickDispatcher;
+import com.example.fxraptor.infra.event.QuoteUpdatedEvent;
 import com.example.fxraptor.quote.QuoteStore;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,17 +17,17 @@ public class MarketDataEngine {
 
     private final QuoteNormalizer quoteNormalizer;
     private final QuoteStore quoteStore;
-    private final TickDispatcher tickDispatcher;
     private final OneSecondAggregator oneSecondAggregator;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MarketDataEngine(QuoteNormalizer quoteNormalizer,
                             QuoteStore quoteStore,
-                            TickDispatcher tickDispatcher,
-                            OneSecondAggregator oneSecondAggregator) {
+                            OneSecondAggregator oneSecondAggregator,
+                            ApplicationEventPublisher eventPublisher) {
         this.quoteNormalizer = quoteNormalizer;
         this.quoteStore = quoteStore;
-        this.tickDispatcher = tickDispatcher;
         this.oneSecondAggregator = oneSecondAggregator;
+        this.eventPublisher = eventPublisher;
     }
 
     public void onTick(RawQuote rawQuote) {
@@ -37,7 +38,12 @@ public class MarketDataEngine {
                 normalized.ask(),
                 normalized.timestamp()
         );
-        tickDispatcher.dispatch(normalized);
+        eventPublisher.publishEvent(new QuoteUpdatedEvent(
+                normalized.currencyPair(),
+                normalized.bid(),
+                normalized.ask(),
+                normalized.timestamp()
+        ));
         oneSecondAggregator.add(normalized);
     }
 }

@@ -6,12 +6,12 @@ import com.example.fxraptor.domain.Quote;
 import com.example.fxraptor.domain.TriggerOrder;
 import com.example.fxraptor.domain.TriggerStatus;
 import com.example.fxraptor.domain.TriggerType;
-import com.example.fxraptor.order.engine.OrderEngine;
-import com.example.fxraptor.order.model.MarketOrderCommand;
+import com.example.fxraptor.infra.event.TriggerFiredEvent;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.TriggerOrderRepository;
 import com.example.fxraptor.risk.service.TriggerEngine;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -43,11 +43,11 @@ class TriggerEngineTest {
     private AccountRepository accountRepository;
 
     @Mock
-    private OrderEngine orderEngine;
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
     void firesStopBuyWhenAskCrossesTriggerPrice() {
-        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, orderEngine);
+        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, eventPublisher);
         TriggerOrder order = triggerOrder(1L, 10L, "USD/JPY", OrderSide.BUY, TriggerType.STOP, "150.00");
         Quote quote = quote("USD/JPY", "149.99", "150.01");
         Account account = account(10L, "user-1");
@@ -59,15 +59,15 @@ class TriggerEngineTest {
 
         engine.evaluateActiveTriggersNow();
 
-        ArgumentCaptor<MarketOrderCommand> captor = ArgumentCaptor.forClass(MarketOrderCommand.class);
-        verify(orderEngine).executeMarketOrder(captor.capture());
+        ArgumentCaptor<TriggerFiredEvent> captor = ArgumentCaptor.forClass(TriggerFiredEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().side()).isEqualTo(OrderSide.BUY);
         assertThat(captor.getValue().quantity()).isEqualByComparingTo("1.00000000");
     }
 
     @Test
     void firesStopSellWhenBidCrossesTriggerPrice() {
-        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, orderEngine);
+        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, eventPublisher);
         TriggerOrder order = triggerOrder(2L, 10L, "USD/JPY", OrderSide.SELL, TriggerType.STOP, "149.90");
         Quote quote = quote("USD/JPY", "149.90", "149.95");
         Account account = account(10L, "user-1");
@@ -79,15 +79,15 @@ class TriggerEngineTest {
 
         engine.evaluateActiveTriggersNow();
 
-        ArgumentCaptor<MarketOrderCommand> captor = ArgumentCaptor.forClass(MarketOrderCommand.class);
-        verify(orderEngine).executeMarketOrder(captor.capture());
+        ArgumentCaptor<TriggerFiredEvent> captor = ArgumentCaptor.forClass(TriggerFiredEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().side()).isEqualTo(OrderSide.SELL);
         assertThat(captor.getValue().quantity()).isEqualByComparingTo("1.00000000");
     }
 
     @Test
     void usesBidAskRulesForAllTriggerTypes() {
-        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, orderEngine);
+        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, eventPublisher);
 
         TriggerOrder stopSell = triggerOrder(1L, 10L, "USD/JPY", OrderSide.SELL, TriggerType.STOP, "149.90");
         TriggerOrder takeProfitBuy = triggerOrder(2L, 10L, "USD/JPY", OrderSide.BUY, TriggerType.TAKE_PROFIT, "150.10");
@@ -103,12 +103,12 @@ class TriggerEngineTest {
 
         engine.evaluateActiveTriggersNow();
 
-        verify(orderEngine, times(2)).executeMarketOrder(any(MarketOrderCommand.class));
+        verify(eventPublisher, times(2)).publishEvent(any(TriggerFiredEvent.class));
     }
 
     @Test
     void doesNotDoubleFireWhenStatusUpdateLostRace() {
-        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, orderEngine);
+        TriggerEngine engine = new TriggerEngine(triggerOrderRepository, quoteService, accountRepository, eventPublisher);
         TriggerOrder order = triggerOrder(1L, 10L, "USD/JPY", OrderSide.BUY, TriggerType.STOP, "150.00");
         Quote quote = quote("USD/JPY", "149.99", "150.01");
 
@@ -118,7 +118,7 @@ class TriggerEngineTest {
 
         engine.evaluateActiveTriggersNow();
 
-        verify(orderEngine, never()).executeMarketOrder(any(MarketOrderCommand.class));
+        verify(eventPublisher, never()).publishEvent(any(TriggerFiredEvent.class));
     }
 
     private static TriggerOrder triggerOrder(Long id,

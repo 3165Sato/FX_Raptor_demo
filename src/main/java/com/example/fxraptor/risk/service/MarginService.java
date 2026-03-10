@@ -5,6 +5,7 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.infra.event.OneSecondAggregatedEvent;
 import com.example.fxraptor.order.engine.OrderEngine;
 import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.repository.AccountRepository;
@@ -12,6 +13,7 @@ import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -96,6 +98,29 @@ public class MarginService {
         BigDecimal marginRatio = calculateMarginMaintenanceRatio(equity, normalizedRequiredMargin);
 
         return new MarginCalculationResult(normalizedRequiredMargin, equity, marginRatio);
+    }
+
+    /**
+     * 1秒集約イベントで各口座の純計算を実行する。
+     * ここでは副作用を持たず、ロスカット要求の発行はLiquidationServiceに任せる。
+     */
+    @EventListener
+    public void onOneSecondAggregated(OneSecondAggregatedEvent event) {
+        Quote quote = toQuote(event);
+        for (Account account : accountRepository.findAll()) {
+            List<Position> positions = positionRepository.findAllByUserId(account.getUserId()).stream()
+                    .filter(position -> event.currencyPair().equals(position.getCurrencyPair()))
+                    .toList();
+            if (positions.isEmpty()) {
+                continue;
+            }
+            MarginRule rule = marginRuleRepository.findById(event.currencyPair())
+                    .orElse(null);
+            if (rule == null) {
+                continue;
+            }
+            calculateResult(account, positions, List.of(quote), List.of(rule));
+        }
     }
 
     public boolean shouldLiquidate(List<Position> positions,
@@ -267,6 +292,15 @@ public class MarginService {
 
     private OrderSide oppositeSide(OrderSide side) {
         return side == OrderSide.BUY ? OrderSide.SELL : OrderSide.BUY;
+    }
+
+    private Quote toQuote(OneSecondAggregatedEvent event) {
+        Quote quote = new Quote();
+        quote.setCurrencyPair(event.currencyPair());
+        quote.setBid(event.closeBid());
+        quote.setAsk(event.closeAsk());
+        quote.setTimestamp(event.windowEnd());
+        return quote;
     }
 
     private <T> Map<String, T> indexByCurrencyPair(List<T> values, Function<T, String> keyExtractor) {
