@@ -1,6 +1,11 @@
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\cache\AccountCache.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\cache\PositionCache.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\Account.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverExecutionLog.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverExecutionResult.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverMode.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverOrder.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverOrderStatus.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\MarginRule.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\Order.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\OrderSide.java
@@ -25,11 +30,14 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\ma
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\service\QuoteNormalizer.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\marketdata\service\TickDispatcher.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\engine\OrderEngine.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\CoverOrderCommand.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\MarketOrderCommand.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\MarketOrderExecutionResult.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\MarketOrderRequest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\model\NettingResult.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\service\AccountService.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\service\CoverDecisionService.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\service\CoverExecutionService.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\service\MarketOrderService.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\service\NettingService.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\order\service\PositionService.java
@@ -38,6 +46,8 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\qu
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\quote\QuoteSimulator.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\quote\QuoteStore.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\AccountRepository.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\CoverExecutionLogRepository.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\CoverOrderRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\MarginRuleRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\OrderRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\PositionRepository.java

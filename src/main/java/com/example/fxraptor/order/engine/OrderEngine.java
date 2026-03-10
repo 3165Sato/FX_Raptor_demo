@@ -8,10 +8,13 @@ import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.order.model.MarketOrderCommand;
+import com.example.fxraptor.order.model.CoverOrderCommand;
 import com.example.fxraptor.order.model.MarketOrderExecutionResult;
 import com.example.fxraptor.order.model.MarketOrderRequest;
 import com.example.fxraptor.order.model.NettingResult;
 import com.example.fxraptor.order.service.AccountService;
+import com.example.fxraptor.order.service.CoverDecisionService;
+import com.example.fxraptor.order.service.CoverExecutionService;
 import com.example.fxraptor.order.service.MarketOrderService;
 import com.example.fxraptor.order.service.NettingService;
 import com.example.fxraptor.order.service.PositionService;
@@ -37,6 +40,8 @@ public class OrderEngine {
 
     private final MarketOrderService marketOrderService;
     private final TradeService tradeService;
+    private final CoverDecisionService coverDecisionService;
+    private final CoverExecutionService coverExecutionService;
     private final NettingService nettingService;
     private final AccountService accountService;
     private final PositionService positionService;
@@ -48,6 +53,8 @@ public class OrderEngine {
 
     public OrderEngine(MarketOrderService marketOrderService,
                        TradeService tradeService,
+                       CoverDecisionService coverDecisionService,
+                       CoverExecutionService coverExecutionService,
                        NettingService nettingService,
                        AccountService accountService,
                        PositionService positionService,
@@ -58,6 +65,8 @@ public class OrderEngine {
                        PlatformTransactionManager transactionManager) {
         this.marketOrderService = marketOrderService;
         this.tradeService = tradeService;
+        this.coverDecisionService = coverDecisionService;
+        this.coverExecutionService = coverExecutionService;
         this.nettingService = nettingService;
         this.accountService = accountService;
         this.positionService = positionService;
@@ -95,6 +104,7 @@ public class OrderEngine {
             BigDecimal executionPrice = marketOrderService.resolveMarketPrice(request.currencyPair(), request.side());
 
             Trade trade = tradeService.createTrade(order, executionPrice);
+            maybeExecuteCoverTrade(trade, request.userId());
             NettingResult nettingResult = nettingService.net(trade);
 
             accountService.applyRealizedPnl(
@@ -117,6 +127,14 @@ public class OrderEngine {
             throw new IllegalStateException("Transaction returned no result");
         }
         return result;
+    }
+
+    private void maybeExecuteCoverTrade(Trade trade, String userId) {
+        Long accountId = accountRepository.findByUserId(userId)
+                .map(Account::getId)
+                .orElse(null);
+        coverDecisionService.decide(trade, accountId)
+                .ifPresent(coverExecutionService::execute);
     }
 
     private void updateCaches(String userId, Position position) {

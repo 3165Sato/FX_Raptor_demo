@@ -1,9 +1,12 @@
+com\example\fxraptor\domain\CoverOrderStatus.class
 com\example\fxraptor\domain\OrderSide.class
 com\example\fxraptor\risk\service\TriggerEngine.class
 com\example\fxraptor\marketdata\service\QuoteNormalizer.class
 com\example\fxraptor\marketdata\service\TickDispatcher.class
 com\example\fxraptor\scheduler\ValuationScheduler.class
 com\example\fxraptor\domain\TriggerOrder.class
+com\example\fxraptor\order\service\CoverExecutionService.class
+com\example\fxraptor\order\service\CoverDecisionService.class
 com\example\fxraptor\infra\event\QuoteUpdatedEvent.class
 com\example\fxraptor\domain\TriggerType.class
 com\example\fxraptor\quote\QuoteStore.class
@@ -13,8 +16,10 @@ com\example\fxraptor\domain\TriggerStatus.class
 com\example\fxraptor\order\service\TradeService.class
 com\example\fxraptor\repository\MarginRuleRepository.class
 com\example\fxraptor\marketdata\model\NormalizedQuote.class
+com\example\fxraptor\repository\CoverExecutionLogRepository.class
 com\example\fxraptor\repository\PositionRepository.class
 com\example\fxraptor\repository\TriggerOrderRepository.class
+com\example\fxraptor\domain\CoverExecutionResult.class
 com\example\fxraptor\order\engine\OrderEngine.class
 com\example\fxraptor\quote\QuoteService.class
 com\example\fxraptor\order\service\NettingService.class
@@ -25,8 +30,10 @@ com\example\fxraptor\marketdata\engine\MarketDataEngine.class
 com\example\fxraptor\risk\model\MarginCalculationResult.class
 com\example\fxraptor\domain\OrderType.class
 com\example\fxraptor\order\service\PositionService.class
+com\example\fxraptor\repository\CoverOrderRepository.class
 com\example\fxraptor\infra\event\TriggerFiredEvent.class
 com\example\fxraptor\marketdata\model\RawQuote.class
+com\example\fxraptor\domain\CoverMode.class
 com\example\fxraptor\quote\QuoteSimulator.class
 com\example\fxraptor\domain\OrderStatus.class
 com\example\fxraptor\domain\Account.class
@@ -35,6 +42,7 @@ com\example\fxraptor\domain\Order.class
 com\example\fxraptor\order\model\MarketOrderRequest.class
 com\example\fxraptor\order\model\NettingResult.class
 com\example\fxraptor\repository\TradeRepository.class
+com\example\fxraptor\order\model\CoverOrderCommand.class
 com\example\fxraptor\domain\Quote.class
 com\example\fxraptor\risk\service\MarginService.class
 com\example\fxraptor\marketdata\model\AggregatedQuote.class
@@ -50,5 +58,7 @@ com\example\fxraptor\cache\AccountCache.class
 com\example\fxraptor\order\model\MarketOrderCommand.class
 com\example\fxraptor\domain\Position.class
 com\example\fxraptor\domain\Trade.class
+com\example\fxraptor\domain\CoverOrder.class
 com\example\fxraptor\risk\service\LiquidationService.class
+com\example\fxraptor\domain\CoverExecutionLog.class
 com\example\fxraptor\risk\model\InternalOrderCommand.class
