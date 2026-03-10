@@ -1,0 +1,92 @@
+package com.example.fxraptor.backoffice.controller;
+
+import com.example.fxraptor.backoffice.service.AccountQueryService;
+import com.example.fxraptor.backoffice.service.CoverOrderQueryService;
+import com.example.fxraptor.backoffice.service.LiquidationQueryService;
+import com.example.fxraptor.backoffice.service.OrderQueryService;
+import com.example.fxraptor.backoffice.service.PositionQueryService;
+import com.example.fxraptor.backoffice.service.TradeQueryService;
+import com.example.fxraptor.backoffice.service.TriggerOrderQueryService;
+import com.example.fxraptor.domain.Account;
+import com.example.fxraptor.domain.CoverOrder;
+import com.example.fxraptor.domain.LiquidationLog;
+import com.example.fxraptor.domain.Order;
+import com.example.fxraptor.domain.Position;
+import com.example.fxraptor.domain.Trade;
+import com.example.fxraptor.domain.TriggerOrder;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+/**
+ * 更新系と分離した管理者向け照会API。
+ */
+@RestController
+@RequestMapping("/admin")
+public class AdminQueryController {
+
+    private final AccountQueryService accountQueryService;
+    private final OrderQueryService orderQueryService;
+    private final TradeQueryService tradeQueryService;
+    private final PositionQueryService positionQueryService;
+    private final TriggerOrderQueryService triggerOrderQueryService;
+    private final CoverOrderQueryService coverOrderQueryService;
+    private final LiquidationQueryService liquidationQueryService;
+
+    public AdminQueryController(AccountQueryService accountQueryService,
+                                OrderQueryService orderQueryService,
+                                TradeQueryService tradeQueryService,
+                                PositionQueryService positionQueryService,
+                                TriggerOrderQueryService triggerOrderQueryService,
+                                CoverOrderQueryService coverOrderQueryService,
+                                LiquidationQueryService liquidationQueryService) {
+        this.accountQueryService = accountQueryService;
+        this.orderQueryService = orderQueryService;
+        this.tradeQueryService = tradeQueryService;
+        this.positionQueryService = positionQueryService;
+        this.triggerOrderQueryService = triggerOrderQueryService;
+        this.coverOrderQueryService = coverOrderQueryService;
+        this.liquidationQueryService = liquidationQueryService;
+    }
+
+    @GetMapping("/accounts/{accountId}")
+    public Account getAccount(@PathVariable Long accountId) {
+        return accountQueryService.findById(accountId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "account not found"));
+    }
+
+    @GetMapping("/orders")
+    public List<Order> getOrders() {
+        return orderQueryService.findAll();
+    }
+
+    @GetMapping("/trades")
+    public List<Trade> getTrades() {
+        return tradeQueryService.findAll();
+    }
+
+    @GetMapping("/positions")
+    public List<Position> getPositions() {
+        return positionQueryService.findAll();
+    }
+
+    @GetMapping("/triggers")
+    public List<TriggerOrder> getTriggers() {
+        return triggerOrderQueryService.findAll();
+    }
+
+    @GetMapping("/covers")
+    public List<CoverOrder> getCovers() {
+        return coverOrderQueryService.findAll();
+    }
+
+    @GetMapping("/liquidations")
+    public List<LiquidationLog> getLiquidations() {
+        return liquidationQueryService.findAll();
+    }
+}

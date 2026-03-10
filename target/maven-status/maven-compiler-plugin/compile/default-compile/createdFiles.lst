@@ -10,6 +10,7 @@ com\example\fxraptor\order\service\CoverDecisionService.class
 com\example\fxraptor\infra\event\QuoteUpdatedEvent.class
 com\example\fxraptor\domain\TriggerType.class
 com\example\fxraptor\quote\QuoteStore.class
+com\example\fxraptor\backoffice\service\AccountQueryService.class
 com\example\fxraptor\risk\service\InternalOrderCommandService.class
 com\example\fxraptor\repository\AccountRepository.class
 com\example\fxraptor\domain\TriggerStatus.class
@@ -19,6 +20,8 @@ com\example\fxraptor\marketdata\model\NormalizedQuote.class
 com\example\fxraptor\repository\CoverExecutionLogRepository.class
 com\example\fxraptor\repository\PositionRepository.class
 com\example\fxraptor\repository\TriggerOrderRepository.class
+com\example\fxraptor\backoffice\service\OrderQueryService.class
+com\example\fxraptor\backoffice\service\TradeQueryService.class
 com\example\fxraptor\domain\CoverExecutionResult.class
 com\example\fxraptor\order\engine\OrderEngine.class
 com\example\fxraptor\quote\QuoteService.class
@@ -34,6 +37,7 @@ com\example\fxraptor\repository\CoverOrderRepository.class
 com\example\fxraptor\infra\event\TriggerFiredEvent.class
 com\example\fxraptor\marketdata\model\RawQuote.class
 com\example\fxraptor\domain\CoverMode.class
+com\example\fxraptor\domain\LiquidationLog.class
 com\example\fxraptor\quote\QuoteSimulator.class
 com\example\fxraptor\domain\OrderStatus.class
 com\example\fxraptor\domain\Account.class
@@ -43,11 +47,17 @@ com\example\fxraptor\order\model\MarketOrderRequest.class
 com\example\fxraptor\order\model\NettingResult.class
 com\example\fxraptor\repository\TradeRepository.class
 com\example\fxraptor\order\model\CoverOrderCommand.class
+com\example\fxraptor\repository\LiquidationLogRepository.class
 com\example\fxraptor\domain\Quote.class
+com\example\fxraptor\backoffice\service\TriggerOrderQueryService.class
 com\example\fxraptor\risk\service\MarginService.class
+com\example\fxraptor\backoffice\controller\AdminQueryController.class
+com\example\fxraptor\backoffice\service\CoverOrderQueryService.class
 com\example\fxraptor\marketdata\model\AggregatedQuote.class
 com\example\fxraptor\marketdata\service\OneSecondAggregator.class
+com\example\fxraptor\backoffice\service\LiquidationQueryService.class
 com\example\fxraptor\order\service\MarketOrderService.class
+com\example\fxraptor\backoffice\service\PositionQueryService.class
 com\example\fxraptor\cache\PositionCache.class
 com\example\fxraptor\order\model\MarketOrderExecutionResult.class
 com\example\fxraptor\order\service\AccountService.class
