@@ -1,6 +1,7 @@
 package com.example.fxraptor.backoffice.controller;
 
 import com.example.fxraptor.backoffice.dto.AdminOrderResponse;
+import com.example.fxraptor.backoffice.dto.AdminPositionResponse;
 import com.example.fxraptor.backoffice.dto.AdminTradeResponse;
 import com.example.fxraptor.backoffice.dto.ListResponse;
 import com.example.fxraptor.backoffice.service.AccountQueryService;
@@ -13,7 +14,6 @@ import com.example.fxraptor.backoffice.service.TriggerOrderQueryService;
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.CoverOrder;
 import com.example.fxraptor.domain.LiquidationLog;
-import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.TriggerOrder;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -73,8 +73,9 @@ public class AdminQueryController {
     }
 
     @GetMapping("/positions")
-    public List<Position> getPositions() {
-        return positionQueryService.findAll();
+    public ListResponse<AdminPositionResponse> getPositions() {
+        List<AdminPositionResponse> items = positionQueryService.findAllAdminPositions();
+        return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/triggers")

@@ -65,6 +65,7 @@ com\example\fxraptor\backoffice\service\CoverOrderQueryService.class
 com\example\fxraptor\marketdata\model\AggregatedQuote.class
 com\example\fxraptor\marketdata\service\OneSecondAggregator.class
 com\example\fxraptor\api\dto\TradeResponseDto.class
+com\example\fxraptor\backoffice\dto\AdminPositionResponse.class
 com\example\fxraptor\backoffice\service\LiquidationQueryService.class
 com\example\fxraptor\order\service\MarketOrderService.class
 com\example\fxraptor\backoffice\service\PositionQueryService.class
