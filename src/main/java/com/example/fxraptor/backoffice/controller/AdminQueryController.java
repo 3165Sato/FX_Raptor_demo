@@ -1,6 +1,8 @@
 package com.example.fxraptor.backoffice.controller;
 
 import com.example.fxraptor.backoffice.dto.AdminOrderResponse;
+import com.example.fxraptor.backoffice.dto.AdminTradeResponse;
+import com.example.fxraptor.backoffice.dto.ListResponse;
 import com.example.fxraptor.backoffice.service.AccountQueryService;
 import com.example.fxraptor.backoffice.service.CoverOrderQueryService;
 import com.example.fxraptor.backoffice.service.LiquidationQueryService;
@@ -12,7 +14,6 @@ import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.CoverOrder;
 import com.example.fxraptor.domain.LiquidationLog;
 import com.example.fxraptor.domain.Position;
-import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.domain.TriggerOrder;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,8 +67,9 @@ public class AdminQueryController {
     }
 
     @GetMapping("/trades")
-    public List<Trade> getTrades() {
-        return tradeQueryService.findAll();
+    public ListResponse<AdminTradeResponse> getTrades() {
+        List<AdminTradeResponse> items = tradeQueryService.findAllAdminTrades();
+        return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/positions")

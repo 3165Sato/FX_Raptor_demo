@@ -1,5 +1,6 @@
 com\example\fxraptor\api\controller\InvestorApiController.class
 com\example\fxraptor\domain\CoverOrderStatus.class
+com\example\fxraptor\backoffice\dto\AdminTradeResponse.class
 com\example\fxraptor\domain\OrderSide.class
 com\example\fxraptor\risk\service\TriggerEngine.class
 com\example\fxraptor\marketdata\service\QuoteNormalizer.class
@@ -77,6 +78,7 @@ com\example\fxraptor\infra\event\OneSecondAggregatedEvent.class
 com\example\fxraptor\repository\OrderRepository.class
 com\example\fxraptor\api\dto\MarketOrderRequestDto.class
 com\example\fxraptor\cache\AccountCache.class
+com\example\fxraptor\backoffice\dto\ListResponse.class
 com\example\fxraptor\order\model\MarketOrderCommand.class
 com\example\fxraptor\risk\service\TriggerOrderService.class
 com\example\fxraptor\domain\Position.class
