@@ -71,6 +71,7 @@ com\example\fxraptor\FxRaptorDemoApplication.class
 com\example\fxraptor\order\model\MarketOrderExecutionResult.class
 com\example\fxraptor\order\service\AccountService.class
 com\example\fxraptor\infra\event\LiquidationRequestedEvent.class
+com\example\fxraptor\config\CorsConfig.class
 com\example\fxraptor\infra\event\OneSecondAggregatedEvent.class
 com\example\fxraptor\repository\OrderRepository.class
 com\example\fxraptor\api\dto\MarketOrderRequestDto.class

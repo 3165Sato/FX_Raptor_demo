@@ -17,6 +17,7 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\ba
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\service\TriggerOrderQueryService.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\cache\AccountCache.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\cache\PositionCache.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\config\CorsConfig.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\Account.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverExecutionLog.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\CoverExecutionResult.java
