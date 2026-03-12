@@ -8,6 +8,7 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\ap
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\TradeResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\TriggerOrderResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\controller\AdminQueryController.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\dto\AdminOrderResponse.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\service\AccountQueryService.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\service\CoverOrderQueryService.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\service\LiquidationQueryService.java

@@ -9,6 +9,7 @@ com\example\fxraptor\domain\TriggerOrder.class
 com\example\fxraptor\order\service\CoverExecutionService.class
 com\example\fxraptor\order\service\CoverDecisionService.class
 com\example\fxraptor\infra\event\QuoteUpdatedEvent.class
+com\example\fxraptor\backoffice\dto\AdminOrderResponse.class
 com\example\fxraptor\domain\TriggerType.class
 com\example\fxraptor\quote\QuoteStore.class
 com\example\fxraptor\backoffice\service\AccountQueryService.class

@@ -1,5 +1,6 @@
 package com.example.fxraptor.backoffice.controller;
 
+import com.example.fxraptor.backoffice.dto.AdminOrderResponse;
 import com.example.fxraptor.backoffice.service.AccountQueryService;
 import com.example.fxraptor.backoffice.service.CoverOrderQueryService;
 import com.example.fxraptor.backoffice.service.LiquidationQueryService;
@@ -10,7 +11,6 @@ import com.example.fxraptor.backoffice.service.TriggerOrderQueryService;
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.CoverOrder;
 import com.example.fxraptor.domain.LiquidationLog;
-import com.example.fxraptor.domain.Order;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.domain.TriggerOrder;
@@ -61,8 +61,8 @@ public class AdminQueryController {
     }
 
     @GetMapping("/orders")
-    public List<Order> getOrders() {
-        return orderQueryService.findAll();
+    public List<AdminOrderResponse> getOrders() {
+        return orderQueryService.findAllAdminOrders();
     }
 
     @GetMapping("/trades")
