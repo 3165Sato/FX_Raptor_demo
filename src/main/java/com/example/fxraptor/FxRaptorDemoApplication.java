@@ -1,6 +1,7 @@
 package com.example.fxraptor;
 
 import com.example.fxraptor.domain.Account;
+import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.Order;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.OrderStatus;
@@ -8,6 +9,7 @@ import com.example.fxraptor.domain.OrderType;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.repository.AccountRepository;
+import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.OrderRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.repository.TradeRepository;
@@ -28,6 +30,7 @@ public class FxRaptorDemoApplication {
 
     @Bean
     CommandLineRunner seedInitialData(AccountRepository accountRepository,
+                                      MarginRuleRepository marginRuleRepository,
                                       OrderRepository orderRepository,
                                       TradeRepository tradeRepository,
                                       PositionRepository positionRepository) {
@@ -38,6 +41,15 @@ public class FxRaptorDemoApplication {
                 newAccount.setBalance(new BigDecimal("1000000.0000"));
                 newAccount.setCurrency("JPY");
                 return accountRepository.save(newAccount);
+            });
+
+            marginRuleRepository.findById("USD/JPY").orElseGet(() -> {
+                MarginRule marginRule = new MarginRule();
+                marginRule.setCurrencyPair("USD/JPY");
+                marginRule.setLeverage(new BigDecimal("25"));
+                marginRule.setMaintenanceRate(new BigDecimal("100"));
+                marginRule.setLiquidationRate(new BigDecimal("50"));
+                return marginRuleRepository.save(marginRule);
             });
 
             Order order = orderRepository.findAll().stream().findFirst().orElseGet(() -> {
