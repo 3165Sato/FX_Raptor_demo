@@ -5,9 +5,11 @@ import com.example.fxraptor.domain.Order;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.OrderType;
+import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.OrderRepository;
+import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.repository.TradeRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -27,43 +29,54 @@ public class FxRaptorDemoApplication {
     @Bean
     CommandLineRunner seedInitialData(AccountRepository accountRepository,
                                       OrderRepository orderRepository,
-                                      TradeRepository tradeRepository) {
+                                      TradeRepository tradeRepository,
+                                      PositionRepository positionRepository) {
         return args -> {
-            Account account = accountRepository.findByUserId("account-1").orElse(null);
-            if (account == null) {
-                account = new Account();
-                account.setUserId("account-1");
-                account.setBalance(new BigDecimal("1000000.0000"));
-                account.setCurrency("JPY");
-                account = accountRepository.save(account);
-            }
+            Account account = accountRepository.findByUserId("account-1").orElseGet(() -> {
+                Account newAccount = new Account();
+                newAccount.setUserId("account-1");
+                newAccount.setBalance(new BigDecimal("1000000.0000"));
+                newAccount.setCurrency("JPY");
+                return accountRepository.save(newAccount);
+            });
 
-            Order order = orderRepository.findAll().stream().findFirst().orElse(null);
-            if (order == null) {
-                order = new Order();
+            Order order = orderRepository.findAll().stream().findFirst().orElseGet(() -> {
+                Order newOrder = new Order();
                 // Orderエンティティに accountId/sourceType がないため、現行定義の項目だけを初期投入する。
-                order.setUserId(account.getUserId());
-                order.setCurrencyPair("USD/JPY");
-                order.setSide(OrderSide.BUY);
-                order.setType(OrderType.MARKET);
-                order.setQuantity(new BigDecimal("10000"));
-                order.setStatus(OrderStatus.FILLED);
-                order = orderRepository.save(order);
+                newOrder.setUserId(account.getUserId());
+                newOrder.setCurrencyPair("USD/JPY");
+                newOrder.setSide(OrderSide.BUY);
+                newOrder.setType(OrderType.MARKET);
+                newOrder.setQuantity(new BigDecimal("10000"));
+                newOrder.setStatus(OrderStatus.FILLED);
+                return orderRepository.save(newOrder);
+            });
+
+            if (tradeRepository.count() == 0) {
+                Trade trade = new Trade();
+                trade.setOrderId(order.getId());
+                trade.setUserId(account.getUserId());
+                trade.setCurrencyPair("USD/JPY");
+                trade.setSide(OrderSide.BUY);
+                trade.setPrice(new BigDecimal("150.12"));
+                trade.setQuantity(new BigDecimal("10000"));
+                trade.setExecutedAt(Instant.now());
+                tradeRepository.save(trade);
             }
 
-            if (tradeRepository.count() > 0) {
-                return;
+            boolean hasPosition = positionRepository
+                    .findByUserIdAndCurrencyPairAndSide(account.getUserId(), "USD/JPY", OrderSide.BUY)
+                    .isPresent();
+            if (!hasPosition) {
+                Position position = new Position();
+                position.setUserId(account.getUserId());
+                position.setCurrencyPair("USD/JPY");
+                position.setSide(OrderSide.BUY);
+                position.setQuantity(new BigDecimal("10000"));
+                position.setAvgPrice(new BigDecimal("150.120"));
+                position.setUpdatedAt(Instant.now());
+                positionRepository.save(position);
             }
-
-            Trade trade = new Trade();
-            trade.setOrderId(order.getId());
-            trade.setUserId(account.getUserId());
-            trade.setCurrencyPair("USD/JPY");
-            trade.setSide(OrderSide.BUY);
-            trade.setPrice(new BigDecimal("150.12"));
-            trade.setQuantity(new BigDecimal("10000"));
-            trade.setExecutedAt(Instant.now());
-            tradeRepository.save(trade);
         };
     }
 }
