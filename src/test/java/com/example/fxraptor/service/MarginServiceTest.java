@@ -180,6 +180,24 @@ class MarginServiceTest {
         assertThat(requests.get(1).quantity()).isEqualByComparingTo("100.00000000");
     }
 
+    @Test
+    void acceptsWholeNumberLiquidationRateAsPercentage() {
+        MarginService marginService = service();
+        Account account = account("user-1", "1000000.0000", "JPY");
+        Position position = position("user-1", "USD/JPY", OrderSide.BUY, "10000.00000000", "150.12000000");
+        Quote quote = quote("USD/JPY", "149.98000000", "150.00000000");
+        MarginRule marginRule = marginRule("USD/JPY", "25.00", "50");
+
+        MarginCalculationResult result = marginService.calculateResult(
+                account,
+                List.of(position),
+                List.of(quote),
+                List.of(marginRule)
+        );
+
+        assertThat(marginService.shouldLiquidate(List.of(position), List.of(marginRule), result)).isFalse();
+    }
+
     private MarginService service() {
         return new MarginService(
                 orderEngine,

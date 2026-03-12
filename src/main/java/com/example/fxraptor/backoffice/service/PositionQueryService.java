@@ -1,16 +1,21 @@
 package com.example.fxraptor.backoffice.service;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
 import com.example.fxraptor.backoffice.dto.AdminPositionResponse;
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.PositionRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class PositionQueryService {
+
+    private static final Logger log = LoggerFactory.getLogger(PositionQueryService.class);
 
     private final PositionRepository positionRepository;
     private final AccountRepository accountRepository;
@@ -26,7 +31,10 @@ public class PositionQueryService {
     }
 
     public List<AdminPositionResponse> findAllAdminPositions() {
-        return positionRepository.findAll().stream()
+        List<Position> positions = positionRepository.findAll();
+        log.info("admin positions query count={}", positions.size());
+
+        return positions.stream()
                 .map(this::toAdminPositionResponse)
                 .toList();
     }

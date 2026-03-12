@@ -137,7 +137,7 @@ public class MarginService {
         BigDecimal threshold = BigDecimal.ZERO;
         for (Position position : positions) {
             MarginRule rule = requireMarginRule(ruleByPair, position.getCurrencyPair());
-            BigDecimal pairThreshold = rule.getLiquidationRate().multiply(HUNDRED);
+            BigDecimal pairThreshold = normalizeRateToPercentage(rule.getLiquidationRate());
             if (pairThreshold.compareTo(threshold) > 0) {
                 threshold = pairThreshold;
             }
@@ -288,6 +288,13 @@ public class MarginService {
             throw new IllegalArgumentException("margin rule liquidationRate must not be negative");
         }
         return marginRule;
+    }
+
+    private BigDecimal normalizeRateToPercentage(BigDecimal rate) {
+        if (rate.compareTo(BigDecimal.ONE) <= 0) {
+            return rate.multiply(HUNDRED);
+        }
+        return rate;
     }
 
     private OrderSide oppositeSide(OrderSide side) {
