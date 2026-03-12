@@ -67,6 +67,7 @@ com\example\fxraptor\backoffice\service\LiquidationQueryService.class
 com\example\fxraptor\order\service\MarketOrderService.class
 com\example\fxraptor\backoffice\service\PositionQueryService.class
 com\example\fxraptor\cache\PositionCache.class
+com\example\fxraptor\FxRaptorDemoApplication.class
 com\example\fxraptor\order\model\MarketOrderExecutionResult.class
 com\example\fxraptor\order\service\AccountService.class
 com\example\fxraptor\infra\event\LiquidationRequestedEvent.class

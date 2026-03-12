@@ -3,6 +3,7 @@ package com.example.fxraptor.quote;
 import com.example.fxraptor.domain.Quote;
 import com.example.fxraptor.marketdata.engine.MarketDataEngine;
 import com.example.fxraptor.marketdata.model.RawQuote;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,7 @@ public class QuoteSimulator {
     private final MarketDataEngine marketDataEngine;
     private final AtomicInteger tick = new AtomicInteger(0);
 
+    @Autowired
     public QuoteSimulator(QuoteStore quoteStore, MarketDataEngine marketDataEngine) {
         this.quoteStore = quoteStore;
         this.marketDataEngine = marketDataEngine;
