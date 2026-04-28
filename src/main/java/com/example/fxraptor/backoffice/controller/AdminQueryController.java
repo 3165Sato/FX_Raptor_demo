@@ -1,5 +1,15 @@
 package com.example.fxraptor.backoffice.controller;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.example.fxraptor.backoffice.dto.AdminOrderResponse;
 import com.example.fxraptor.backoffice.dto.AdminPositionResponse;
 import com.example.fxraptor.backoffice.dto.AdminTradeResponse;
@@ -15,14 +25,6 @@ import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.CoverOrder;
 import com.example.fxraptor.domain.LiquidationLog;
 import com.example.fxraptor.domain.TriggerOrder;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 /**
  * 更新系と分離した管理者向け照会API。
@@ -73,8 +75,10 @@ public class AdminQueryController {
     }
 
     @GetMapping("/positions")
-    public ListResponse<AdminPositionResponse> getPositions() {
-        List<AdminPositionResponse> items = positionQueryService.findAllAdminPositions();
+    public ListResponse<AdminPositionResponse> getPositions(
+        @RequestParam(required = false) String accountId
+    ) {
+        List<AdminPositionResponse> items = positionQueryService.findAllAdminPositions(accountId);
         return new ListResponse<>(items, items.size());
     }
 

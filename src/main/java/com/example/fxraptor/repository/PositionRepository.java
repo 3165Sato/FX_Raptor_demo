@@ -1,11 +1,12 @@
 package com.example.fxraptor.repository;
 
-import com.example.fxraptor.domain.OrderSide;
-import com.example.fxraptor.domain.Position;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.fxraptor.domain.OrderSide;
+import com.example.fxraptor.domain.Position;
 
 public interface PositionRepository extends JpaRepository<Position, Long> {
     /**
@@ -15,4 +16,6 @@ public interface PositionRepository extends JpaRepository<Position, Long> {
     Optional<Position> findByUserIdAndCurrencyPairAndSide(String userId, String currencyPair, OrderSide side);
 
     List<Position> findAllByUserId(String userId);
+
+    // List<Position> findAllByUserId(Long accountId);
 }
