@@ -5,6 +5,7 @@ import com.example.fxraptor.domain.MarginRule;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.infra.event.OneSecondAggregatedEvent;
 import com.example.fxraptor.order.engine.OrderEngine;
 import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.quote.QuoteService;
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -196,6 +198,26 @@ class MarginServiceTest {
         );
 
         assertThat(marginService.shouldLiquidate(List.of(position), List.of(marginRule), result)).isFalse();
+    }
+
+    @Test
+    void ignoresAggregatedEventsWhenValuationIsDisabled() {
+        MarginService marginService = service();
+        marginService.setValuationEnabled(false);
+
+        marginService.onOneSecondAggregated(new OneSecondAggregatedEvent(
+                "USD/JPY",
+                new BigDecimal("150.10000000"),
+                new BigDecimal("149.90000000"),
+                new BigDecimal("150.00000000"),
+                new BigDecimal("150.12000000"),
+                new BigDecimal("149.92000000"),
+                new BigDecimal("150.02000000"),
+                Instant.parse("2026-03-05T00:00:00Z"),
+                Instant.parse("2026-03-05T00:00:01Z")
+        ));
+
+        verifyNoInteractions(accountRepository, positionRepository, marginRuleRepository, quoteService, orderEngine);
     }
 
     private MarginService service() {

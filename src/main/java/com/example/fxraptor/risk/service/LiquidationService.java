@@ -12,6 +12,7 @@ import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
 import com.example.fxraptor.risk.model.InternalOrderCommand;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class LiquidationService {
     private final MarginRuleRepository marginRuleRepository;
     private final MarginService marginService;
     private final ApplicationEventPublisher eventPublisher;
+    private boolean valuationEnabled = true;
 
     public LiquidationService(AccountRepository accountRepository,
                               PositionRepository positionRepository,
@@ -46,6 +48,11 @@ public class LiquidationService {
         this.marginRuleRepository = marginRuleRepository;
         this.marginService = marginService;
         this.eventPublisher = eventPublisher;
+    }
+
+    @Value("${app.valuation.enabled:true}")
+    public void setValuationEnabled(boolean valuationEnabled) {
+        this.valuationEnabled = valuationEnabled;
     }
 
     public List<InternalOrderCommand> createInternalCommands(Account account,
@@ -65,6 +72,9 @@ public class LiquidationService {
 
     @EventListener
     public void onOneSecondAggregated(OneSecondAggregatedEvent event) {
+        if (!valuationEnabled) {
+            return;
+        }
         MarginRule rule = marginRuleRepository.findById(event.currencyPair()).orElse(null);
         if (rule == null) {
             return;

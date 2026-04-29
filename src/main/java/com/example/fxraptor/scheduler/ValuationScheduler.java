@@ -10,6 +10,7 @@ import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
 import com.example.fxraptor.risk.service.MarginService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +30,7 @@ public class ValuationScheduler {
     private final MarginRuleRepository marginRuleRepository;
     private final QuoteService quoteService;
     private final MarginService marginService;
+    private boolean valuationEnabled = true;
 
     public ValuationScheduler(AccountRepository accountRepository,
                               PositionRepository positionRepository,
@@ -42,8 +44,16 @@ public class ValuationScheduler {
         this.marginService = marginService;
     }
 
+    @Value("${app.valuation.enabled:true}")
+    public void setValuationEnabled(boolean valuationEnabled) {
+        this.valuationEnabled = valuationEnabled;
+    }
+
     @Scheduled(fixedRate = 1000)
     public void valuateAllAccounts() {
+        if (!valuationEnabled) {
+            return;
+        }
         runValuationCycle();
     }
 

@@ -13,6 +13,7 @@ import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,7 @@ public class MarginService {
     private final PositionRepository positionRepository;
     private final MarginRuleRepository marginRuleRepository;
     private final AccountRepository accountRepository;
+    private boolean valuationEnabled = true;
 
     public MarginService(OrderEngine orderEngine,
                          QuoteService quoteService,
@@ -53,6 +55,11 @@ public class MarginService {
         this.positionRepository = positionRepository;
         this.marginRuleRepository = marginRuleRepository;
         this.accountRepository = accountRepository;
+    }
+
+    @Value("${app.valuation.enabled:true}")
+    public void setValuationEnabled(boolean valuationEnabled) {
+        this.valuationEnabled = valuationEnabled;
     }
 
     /**
@@ -106,6 +113,9 @@ public class MarginService {
      */
     @EventListener
     public void onOneSecondAggregated(OneSecondAggregatedEvent event) {
+        if (!valuationEnabled) {
+            return;
+        }
         Quote quote = toQuote(event);
         for (Account account : accountRepository.findAll()) {
             List<Position> positions = positionRepository.findAllByUserId(account.getUserId()).stream()

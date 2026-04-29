@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,6 +94,22 @@ class ValuationSchedulerTest {
         scheduler.runValuationCycle();
 
         verify(marginService, never()).liquidate(account);
+    }
+
+    @Test
+    void scheduledValuationCanBeDisabledForDevelopment() {
+        ValuationScheduler scheduler = new ValuationScheduler(
+                accountRepository,
+                positionRepository,
+                marginRuleRepository,
+                quoteService,
+                marginService
+        );
+        scheduler.setValuationEnabled(false);
+
+        scheduler.valuateAllAccounts();
+
+        verifyNoInteractions(accountRepository, positionRepository, marginRuleRepository, quoteService, marginService);
     }
 
     private static Account account(String userId) {
