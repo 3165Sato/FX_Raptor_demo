@@ -119,7 +119,7 @@ public class OrderEngine {
             order.setStatus(OrderStatus.FILLED);
             Order filledOrder = orderRepository.save(order);
 
-            updateCaches(request.userId(), savedPosition);
+            updateCaches(request.userId(), nettingResult, savedPosition);
             return new MarketOrderExecutionResult(filledOrder, trade, savedPosition);
         });
 
@@ -137,7 +137,8 @@ public class OrderEngine {
                 .ifPresent(coverExecutionService::execute);
     }
 
-    private void updateCaches(String userId, Position position) {
+    private void updateCaches(String userId, NettingResult nettingResult, Position position) {
+        evictClosedOppositePosition(nettingResult);
         if (position != null) {
             positionCache.put(positionKey(position), position);
         }
@@ -145,6 +146,17 @@ public class OrderEngine {
         if (account != null) {
             accountCache.put(userId, account);
         }
+    }
+
+    private void evictClosedOppositePosition(NettingResult nettingResult) {
+        Position oppositePosition = nettingResult.oppositeSidePosition();
+        if (oppositePosition == null) {
+            return;
+        }
+        if (nettingResult.closedQuantity().compareTo(oppositePosition.getQuantity()) < 0) {
+            return;
+        }
+        positionCache.evict(positionKey(oppositePosition));
     }
 
     private String positionKey(Position position) {

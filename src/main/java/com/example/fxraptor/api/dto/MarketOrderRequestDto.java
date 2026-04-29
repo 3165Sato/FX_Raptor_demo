@@ -5,7 +5,7 @@ import com.example.fxraptor.domain.OrderSide;
 import java.math.BigDecimal;
 
 public record MarketOrderRequestDto(
-        Long accountId,
+        String accountId,
         String currencyPair,
         OrderSide side,
         BigDecimal quantity

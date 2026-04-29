@@ -1,7 +1,12 @@
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\api\controller\InvestorApiControllerTest.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\AccountServiceTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\CoverDecisionServiceTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\CoverExecutionServiceTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\MarginServiceTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\MarketOrderServiceTest.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\OrderEngineTest.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\PositionServiceTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\QuoteSimulatorTest.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\TradeServiceTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\TriggerEngineTest.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\test\java\com\example\fxraptor\service\ValuationSchedulerTest.java

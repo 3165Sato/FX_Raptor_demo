@@ -71,8 +71,7 @@ public class InvestorApiController {
 
     @PostMapping("/orders/market")
     public MarketOrderResponseDto placeMarketOrder(@RequestBody MarketOrderRequestDto request) {
-        Account account = accountRepository.findById(request.accountId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "account not found"));
+        Account account = resolveAccount(request.accountId());
         MarketOrderExecutionResult result = orderEngine.executeMarketOrder(new MarketOrderCommand(
                 account.getUserId(),
                 request.currencyPair(),
@@ -93,8 +92,9 @@ public class InvestorApiController {
 
     @PostMapping("/triggers")
     public TriggerOrderResponseDto createTrigger(@RequestBody CreateTriggerOrderRequestDto request) {
+        Account account = resolveAccount(request.accountId());
         TriggerOrder order = new TriggerOrder();
-        order.setAccountId(request.accountId());
+        order.setAccountId(account.getId());
         order.setCurrencyPair(request.currencyPair());
         order.setSide(request.side());
         order.setTriggerType(request.triggerType());
@@ -198,5 +198,23 @@ public class InvestorApiController {
                 triggerOrder.getCreatedAt(),
                 triggerOrder.getUpdatedAt()
         );
+    }
+
+    private Account resolveAccount(String accountId) {
+        if (accountId == null || accountId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountId must not be blank");
+        }
+
+        return accountRepository.findByUserId(accountId)
+                .or(() -> parseNumericAccountId(accountId).flatMap(accountRepository::findById))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "account not found"));
+    }
+
+    private java.util.Optional<Long> parseNumericAccountId(String accountId) {
+        try {
+            return java.util.Optional.of(Long.parseLong(accountId));
+        } catch (NumberFormatException ex) {
+            return java.util.Optional.empty();
+        }
     }
 }
