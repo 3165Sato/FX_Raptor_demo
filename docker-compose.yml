@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fx_raptor_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fx_raptor
+      POSTGRES_USER: fx_user
+      POSTGRES_PASSWORD: fx_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fx_user -d fx_raptor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
