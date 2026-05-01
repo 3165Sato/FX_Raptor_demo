@@ -1,5 +1,4 @@
 com\example\fxraptor\service\CoverDecisionServiceTest.class
-com\example\fxraptor\service\QuoteSimulatorTest.class
 com\example\fxraptor\service\TriggerEngineTest.class
 com\example\fxraptor\service\CoverExecutionServiceTest.class
 com\example\fxraptor\service\MarketOrderServiceTest.class

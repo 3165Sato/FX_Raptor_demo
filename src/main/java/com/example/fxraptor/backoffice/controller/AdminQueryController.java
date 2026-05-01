@@ -64,19 +64,24 @@ public class AdminQueryController {
     }
 
     @GetMapping("/orders")
-    public List<AdminOrderResponse> getOrders() {
-        return orderQueryService.findAllAdminOrders();
+    public ListResponse<AdminOrderResponse> getOrders(
+        @RequestParam(required = false) Long accountId
+    ) {
+        List<AdminOrderResponse> items = orderQueryService.findAllAdminOrders(accountId);
+        return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/trades")
-    public ListResponse<AdminTradeResponse> getTrades() {
-        List<AdminTradeResponse> items = tradeQueryService.findAllAdminTrades();
+    public ListResponse<AdminTradeResponse> getTrades(
+        @RequestParam(required = false) Long accountId
+    ) {
+        List<AdminTradeResponse> items = tradeQueryService.findAllAdminTrades(accountId);
         return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/positions")
     public ListResponse<AdminPositionResponse> getPositions(
-        @RequestParam(required = false) String accountId
+        @RequestParam(required = false) Long accountId
     ) {
         List<AdminPositionResponse> items = positionQueryService.findAllAdminPositions(accountId);
         return new ListResponse<>(items, items.size());

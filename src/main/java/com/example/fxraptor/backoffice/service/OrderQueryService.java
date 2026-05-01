@@ -8,6 +8,7 @@ import com.example.fxraptor.repository.OrderRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OrderQueryService {
@@ -25,8 +26,14 @@ public class OrderQueryService {
         return orderRepository.findAll();
     }
 
-    public List<AdminOrderResponse> findAllAdminOrders() {
-        return orderRepository.findAll().stream()
+    public List<Order> findAllByAccountId(Long accountId) {
+        return resolveUserId(accountId)
+                .map(orderRepository::findAllByUserId)
+                .orElseGet(orderRepository::findAll);
+    }
+
+    public List<AdminOrderResponse> findAllAdminOrders(Long accountId) {
+        return findAllByAccountId(accountId).stream()
                 .map(this::toAdminOrderResponse)
                 .toList();
     }
@@ -50,7 +57,13 @@ public class OrderQueryService {
     }
 
     private String resolveSourceType(Order order) {
-        // 現行のOrderエンティティは発生元を保持していないため、管理画面では既定値として USER を返す。
-        return "USER";
+        return order.getSourceType() == null ? null : order.getSourceType().name();
+    }
+
+    private Optional<String> resolveUserId(Long accountId) {
+        if (accountId == null) {
+            return Optional.empty();
+        }
+        return accountRepository.findById(accountId).map(Account::getUserId);
     }
 }

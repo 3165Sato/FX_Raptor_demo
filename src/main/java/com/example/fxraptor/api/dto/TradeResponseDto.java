@@ -6,13 +6,13 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record TradeResponseDto(
-        Long id,
+        Long tradeId,
         Long orderId,
-        String userId,
+        Long accountId,
         String currencyPair,
         OrderSide side,
-        BigDecimal price,
-        BigDecimal quantity,
+        BigDecimal executionPrice,
+        BigDecimal executionQuantity,
         Instant executedAt
 ) {
 }

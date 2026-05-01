@@ -1,29 +1,29 @@
 package com.example.fxraptor.order.service;
 
+import java.math.BigDecimal;
+
+import org.springframework.stereotype.Service;
+
 import com.example.fxraptor.domain.Order;
+import com.example.fxraptor.domain.OrderSourceType;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.OrderType;
+import com.example.fxraptor.domain.Quote;
 import com.example.fxraptor.order.model.MarketOrderRequest;
+import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.OrderRepository;
-import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-
-/**
- * 成行注文固有の責務だけを持つサービス。
- */
 @Service
 public class MarketOrderService {
 
-    private static final String USD_JPY = "USD/JPY";
-    private static final BigDecimal USD_JPY_BID = new BigDecimal("149.98");
-    private static final BigDecimal USD_JPY_ASK = new BigDecimal("150.00");
-
     private final OrderRepository orderRepository;
+    private final QuoteService quoteService;
 
-    public MarketOrderService(OrderRepository orderRepository) {
+    public MarketOrderService(OrderRepository orderRepository,
+                              QuoteService quoteService) {
         this.orderRepository = orderRepository;
+        this.quoteService = quoteService;
     }
 
     public void validate(MarketOrderRequest request) {
@@ -45,10 +45,11 @@ public class MarketOrderService {
     }
 
     public BigDecimal resolveMarketPrice(String currencyPair, OrderSide side) {
-        if (!USD_JPY.equals(currencyPair)) {
-            throw new IllegalArgumentException("Only USD/JPY is supported");
+        Quote quote = quoteService.getQuote(currencyPair);
+        if (quote.getBid() == null || quote.getAsk() == null) {
+            throw new IllegalArgumentException("quote bid/ask must not be null for " + currencyPair);
         }
-        return side == OrderSide.BUY ? USD_JPY_ASK : USD_JPY_BID;
+        return side == OrderSide.BUY ? quote.getAsk() : quote.getBid();
     }
 
     public Order createOrder(MarketOrderRequest request) {
@@ -59,6 +60,7 @@ public class MarketOrderService {
         order.setType(OrderType.MARKET);
         order.setQuantity(request.quantity());
         order.setStatus(OrderStatus.NEW);
+        order.setSourceType(request.sourceType() == null ? OrderSourceType.USER : request.sourceType());
         return orderRepository.save(order);
     }
 }

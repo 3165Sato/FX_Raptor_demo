@@ -8,13 +8,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record OrderResponseDto(
-        Long id,
-        String userId,
+        Long orderId,
+        Long accountId,
         String currencyPair,
         OrderSide side,
-        OrderType type,
+        OrderType orderType,
         BigDecimal quantity,
         OrderStatus status,
+        String sourceType,
         Instant createdAt
 ) {
 }

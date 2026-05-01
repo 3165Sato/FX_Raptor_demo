@@ -6,13 +6,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record PositionResponseDto(
-        Long id,
-        String userId,
+        Long positionId,
+        Long accountId,
         String currencyPair,
         OrderSide side,
         BigDecimal quantity,
         BigDecimal avgPrice,
-        Long version,
+        BigDecimal currentPrice,
+        BigDecimal unrealizedPnl,
         Instant updatedAt
 ) {
 }

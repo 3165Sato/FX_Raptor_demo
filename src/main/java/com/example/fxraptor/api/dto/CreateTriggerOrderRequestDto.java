@@ -6,7 +6,7 @@ import com.example.fxraptor.domain.TriggerType;
 import java.math.BigDecimal;
 
 public record CreateTriggerOrderRequestDto(
-        String accountId,
+        Long accountId,
         String currencyPair,
         OrderSide side,
         TriggerType triggerType,

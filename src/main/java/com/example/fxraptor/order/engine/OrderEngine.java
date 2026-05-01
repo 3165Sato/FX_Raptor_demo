@@ -1,14 +1,22 @@
 package com.example.fxraptor.order.engine;
 
+import java.math.BigDecimal;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import com.example.fxraptor.cache.AccountCache;
 import com.example.fxraptor.cache.PositionCache;
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.Order;
+import com.example.fxraptor.domain.OrderSourceType;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.order.model.MarketOrderCommand;
-import com.example.fxraptor.order.model.CoverOrderCommand;
 import com.example.fxraptor.order.model.MarketOrderExecutionResult;
 import com.example.fxraptor.order.model.MarketOrderRequest;
 import com.example.fxraptor.order.model.NettingResult;
@@ -21,18 +29,7 @@ import com.example.fxraptor.order.service.PositionService;
 import com.example.fxraptor.order.service.TradeService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.OrderRepository;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import java.math.BigDecimal;
-
-/**
- * 注文処理全体の司令塔。
- * トランザクション境界を持ち、各サービスを順に呼び出して整合性を保つ。
- */
 @Component
 public class OrderEngine {
 
@@ -82,7 +79,8 @@ public class OrderEngine {
                 command.userId(),
                 command.currencyPair(),
                 command.side(),
-                command.quantity()
+                command.quantity(),
+                command.sourceType() == null ? OrderSourceType.USER : command.sourceType()
         );
         marketOrderService.validate(request);
 

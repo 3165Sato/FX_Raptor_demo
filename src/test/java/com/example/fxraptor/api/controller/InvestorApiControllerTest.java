@@ -2,8 +2,15 @@ package com.example.fxraptor.api.controller;
 
 import com.example.fxraptor.api.dto.CreateTriggerOrderRequestDto;
 import com.example.fxraptor.api.dto.MarketOrderRequestDto;
+import com.example.fxraptor.backoffice.service.AccountQueryService;
+import com.example.fxraptor.backoffice.service.OrderQueryService;
+import com.example.fxraptor.backoffice.service.PositionQueryService;
+import com.example.fxraptor.backoffice.service.TradeQueryService;
+import com.example.fxraptor.backoffice.service.TriggerOrderQueryService;
 import com.example.fxraptor.domain.Account;
+import com.example.fxraptor.domain.Order;
 import com.example.fxraptor.domain.OrderSide;
+import com.example.fxraptor.domain.OrderSourceType;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.domain.TriggerOrder;
@@ -12,18 +19,17 @@ import com.example.fxraptor.domain.TriggerType;
 import com.example.fxraptor.order.engine.OrderEngine;
 import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.order.model.MarketOrderExecutionResult;
+import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.risk.service.TriggerOrderService;
-import com.example.fxraptor.backoffice.service.AccountQueryService;
-import com.example.fxraptor.backoffice.service.OrderQueryService;
-import com.example.fxraptor.backoffice.service.PositionQueryService;
-import com.example.fxraptor.backoffice.service.TradeQueryService;
-import com.example.fxraptor.backoffice.service.TriggerOrderQueryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -33,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class InvestorApiControllerTest {
@@ -61,15 +69,18 @@ class InvestorApiControllerTest {
     @Mock
     private TriggerOrderQueryService triggerOrderQueryService;
 
+    @Mock
+    private QuoteService quoteService;
+
     @Test
-    void marketOrderAcceptsBusinessAccountIdString() {
+    void marketOrderUsesNumericAccountId() {
         InvestorApiController controller = controller();
-        Account account = account(1L, "A-100");
-        when(accountRepository.findByUserId("A-100")).thenReturn(Optional.of(account));
+        Account account = account(1L, "account-1");
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
         when(orderEngine.executeMarketOrder(any(MarketOrderCommand.class))).thenReturn(executionResult(account));
 
         controller.placeMarketOrder(new MarketOrderRequestDto(
-                "A-100",
+                1L,
                 "USD/JPY",
                 OrderSide.BUY,
                 new BigDecimal("10000.00000000")
@@ -77,14 +88,14 @@ class InvestorApiControllerTest {
 
         ArgumentCaptor<MarketOrderCommand> captor = ArgumentCaptor.forClass(MarketOrderCommand.class);
         verify(orderEngine).executeMarketOrder(captor.capture());
-        assertThat(captor.getValue().userId()).isEqualTo("A-100");
+        assertThat(captor.getValue().userId()).isEqualTo("account-1");
+        assertThat(captor.getValue().sourceType()).isEqualTo(OrderSourceType.USER);
     }
 
     @Test
-    void triggerOrderFallsBackToNumericAccountIdWhenRequestIsNumberString() {
+    void triggerOrderUsesNumericAccountId() {
         InvestorApiController controller = controller();
-        Account account = account(1L, "A-100");
-        when(accountRepository.findByUserId("1")).thenReturn(Optional.empty());
+        Account account = account(1L, "account-1");
         when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
         when(triggerOrderService.create(any(TriggerOrder.class))).thenAnswer(invocation -> {
             TriggerOrder triggerOrder = invocation.getArgument(0);
@@ -94,7 +105,7 @@ class InvestorApiControllerTest {
         });
 
         controller.createTrigger(new CreateTriggerOrderRequestDto(
-                "1",
+                1L,
                 "USD/JPY",
                 OrderSide.BUY,
                 TriggerType.STOP,
@@ -107,6 +118,23 @@ class InvestorApiControllerTest {
         assertThat(captor.getValue().getAccountId()).isEqualTo(1L);
     }
 
+    @Test
+    void marketOrderRejectsStringAccountIdInJson() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller()).build();
+
+        mockMvc.perform(post("/api/orders/market")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountId": "A-100",
+                                  "currencyPair": "USD/JPY",
+                                  "side": "BUY",
+                                  "quantity": 10000
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
     private InvestorApiController controller() {
         return new InvestorApiController(
                 orderEngine,
@@ -116,7 +144,8 @@ class InvestorApiControllerTest {
                 positionQueryService,
                 orderQueryService,
                 tradeQueryService,
-                triggerOrderQueryService
+                triggerOrderQueryService,
+                quoteService
         );
     }
 
@@ -130,7 +159,7 @@ class InvestorApiControllerTest {
     }
 
     private static MarketOrderExecutionResult executionResult(Account account) {
-        com.example.fxraptor.domain.Order order = new com.example.fxraptor.domain.Order();
+        Order order = new Order();
         order.setId(10L);
         order.setStatus(OrderStatus.FILLED);
         Trade trade = new Trade();

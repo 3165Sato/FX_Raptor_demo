@@ -1,40 +1,40 @@
 package com.example.fxraptor.quote;
 
 import com.example.fxraptor.domain.Quote;
+import com.example.fxraptor.repository.QuoteRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
-/**
- * 疑似レートのインメモリ保管庫。
- * DB永続化は行わず、アプリ起動中だけ有効な最新Quoteを保持する。
- */
 @Component
 public class QuoteStore {
 
-    private final Map<String, Quote> quotes = new ConcurrentHashMap<>();
+    private final QuoteRepository quoteRepository;
 
-    public QuoteStore() {
-        Instant now = Instant.now();
-        // 初期値は固定で開始する。
-        updateQuote("USD/JPY", new BigDecimal("149.98"), new BigDecimal("150.00"), now);
-        updateQuote("EUR/JPY", new BigDecimal("161.48"), new BigDecimal("161.50"), now);
+    public QuoteStore(QuoteRepository quoteRepository) {
+        this.quoteRepository = quoteRepository;
+    }
+
+    @PostConstruct
+    public void seedDefaults() {
+        seedIfMissing("USD/JPY", new BigDecimal("149.98"), new BigDecimal("150.00"));
+        seedIfMissing("EUR/JPY", new BigDecimal("161.48"), new BigDecimal("161.50"));
+        seedIfMissing("GBP/JPY", new BigDecimal("192.10"), new BigDecimal("192.12"));
     }
 
     public Quote getQuote(String currencyPair) {
-        Quote quote = quotes.get(currencyPair);
-        if (quote == null) {
-            throw new IllegalArgumentException("quote not found for " + currencyPair);
-        }
-        return copyOf(quote);
+        return quoteRepository.findById(currencyPair)
+                .map(this::copyOf)
+                .orElseThrow(() -> new IllegalArgumentException("quote not found for " + currencyPair));
     }
 
     public Map<String, Quote> getAllQuotes() {
-        return quotes.entrySet().stream()
-                .collect(java.util.stream.Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> copyOf(entry.getValue())));
+        return quoteRepository.findAll().stream()
+                .collect(Collectors.toUnmodifiableMap(Quote::getCurrencyPair, this::copyOf));
     }
 
     public void updateQuote(String currencyPair, BigDecimal bid, BigDecimal ask, Instant timestamp) {
@@ -52,7 +52,14 @@ public class QuoteStore {
         quote.setBid(bid);
         quote.setAsk(ask);
         quote.setTimestamp(timestamp);
-        quotes.put(currencyPair, quote);
+        quoteRepository.save(quote);
+    }
+
+    private void seedIfMissing(String currencyPair, BigDecimal bid, BigDecimal ask) {
+        if (quoteRepository.existsById(currencyPair)) {
+            return;
+        }
+        updateQuote(currencyPair, bid, ask, Instant.now());
     }
 
     private Quote copyOf(Quote source) {

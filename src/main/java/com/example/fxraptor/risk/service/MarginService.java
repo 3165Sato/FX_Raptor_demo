@@ -2,6 +2,7 @@ package com.example.fxraptor.risk.service;
 
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.MarginRule;
+import com.example.fxraptor.domain.OrderSourceType;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.Quote;
@@ -189,7 +190,8 @@ public class MarginService {
                     latestAccount.getUserId(),
                     target.getCurrencyPair(),
                     oppositeSide(target.getSide()),
-                    target.getQuantity()));
+                    target.getQuantity(),
+                    OrderSourceType.LIQUIDATION));
         }
     }
 

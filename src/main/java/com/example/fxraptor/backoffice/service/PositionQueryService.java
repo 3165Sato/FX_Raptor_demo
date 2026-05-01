@@ -30,15 +30,20 @@ public class PositionQueryService {
         return positionRepository.findAll();
     }
 
-    public List<AdminPositionResponse> findAllAdminPositions(String accountId) {
-        List<Position> positions;
+    public List<Position> findAllByAccountId(Long accountId) {
         if (accountId == null) {
-            positions = positionRepository.findAll();
-            log.info("admin positions query count={}", positions.size());
-        } else {
-            positions = positionRepository.findAllByUserId(accountId);
-            log.info("admin positions query count={}", positions.size());
+            return positionRepository.findAll();
         }
+
+        return accountRepository.findById(accountId)
+                .map(Account::getUserId)
+                .map(positionRepository::findAllByUserId)
+                .orElse(List.of());
+    }
+
+    public List<AdminPositionResponse> findAllAdminPositions(Long accountId) {
+        List<Position> positions = findAllByAccountId(accountId);
+        log.info("admin positions query count={}", positions.size());
 
         return positions.stream()
                 .map(this::toAdminPositionResponse)

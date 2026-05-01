@@ -6,8 +6,10 @@ import com.example.fxraptor.api.dto.MarketOrderRequestDto;
 import com.example.fxraptor.api.dto.MarketOrderResponseDto;
 import com.example.fxraptor.api.dto.OrderResponseDto;
 import com.example.fxraptor.api.dto.PositionResponseDto;
+import com.example.fxraptor.api.dto.QuoteResponseDto;
 import com.example.fxraptor.api.dto.TradeResponseDto;
 import com.example.fxraptor.api.dto.TriggerOrderResponseDto;
+import com.example.fxraptor.backoffice.dto.ListResponse;
 import com.example.fxraptor.backoffice.service.AccountQueryService;
 import com.example.fxraptor.backoffice.service.OrderQueryService;
 import com.example.fxraptor.backoffice.service.PositionQueryService;
@@ -15,12 +17,16 @@ import com.example.fxraptor.backoffice.service.TradeQueryService;
 import com.example.fxraptor.backoffice.service.TriggerOrderQueryService;
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.Order;
+import com.example.fxraptor.domain.OrderSide;
+import com.example.fxraptor.domain.OrderSourceType;
 import com.example.fxraptor.domain.Position;
+import com.example.fxraptor.domain.Quote;
 import com.example.fxraptor.domain.Trade;
 import com.example.fxraptor.domain.TriggerOrder;
 import com.example.fxraptor.order.engine.OrderEngine;
 import com.example.fxraptor.order.model.MarketOrderCommand;
 import com.example.fxraptor.order.model.MarketOrderExecutionResult;
+import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.risk.service.TriggerOrderService;
 import org.springframework.http.HttpStatus;
@@ -29,15 +35,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * 投資家向け公開API相当の最小チャネル。
- * 管理系の /admin と分離して /api で提供する。
- */
 @RestController
 @RequestMapping("/api")
 public class InvestorApiController {
@@ -50,6 +54,7 @@ public class InvestorApiController {
     private final OrderQueryService orderQueryService;
     private final TradeQueryService tradeQueryService;
     private final TriggerOrderQueryService triggerOrderQueryService;
+    private final QuoteService quoteService;
 
     public InvestorApiController(OrderEngine orderEngine,
                                  TriggerOrderService triggerOrderService,
@@ -58,7 +63,8 @@ public class InvestorApiController {
                                  PositionQueryService positionQueryService,
                                  OrderQueryService orderQueryService,
                                  TradeQueryService tradeQueryService,
-                                 TriggerOrderQueryService triggerOrderQueryService) {
+                                 TriggerOrderQueryService triggerOrderQueryService,
+                                 QuoteService quoteService) {
         this.orderEngine = orderEngine;
         this.triggerOrderService = triggerOrderService;
         this.accountRepository = accountRepository;
@@ -67,6 +73,7 @@ public class InvestorApiController {
         this.orderQueryService = orderQueryService;
         this.tradeQueryService = tradeQueryService;
         this.triggerOrderQueryService = triggerOrderQueryService;
+        this.quoteService = quoteService;
     }
 
     @PostMapping("/orders/market")
@@ -76,11 +83,14 @@ public class InvestorApiController {
                 account.getUserId(),
                 request.currencyPair(),
                 request.side(),
-                request.quantity()
+                request.quantity(),
+                OrderSourceType.USER
         ));
         return new MarketOrderResponseDto(
                 result.order().getId(),
-                result.order().getStatus(),
+                result.order().getStatus().name(),
+                "market order filled",
+                result.trade().getExecutedAt(),
                 result.trade().getId(),
                 result.trade().getCurrencyPair(),
                 result.trade().getSide(),
@@ -119,64 +129,87 @@ public class InvestorApiController {
     }
 
     @GetMapping("/positions")
-    public List<PositionResponseDto> getPositions() {
-        return positionQueryService.findAll().stream()
+    public ListResponse<PositionResponseDto> getPositions(@RequestParam(required = false) Long accountId) {
+        List<PositionResponseDto> items = positionQueryService.findAllByAccountId(accountId).stream()
                 .map(this::toPositionResponse)
                 .toList();
+        return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/orders")
-    public List<OrderResponseDto> getOrders() {
-        return orderQueryService.findAll().stream()
+    public ListResponse<OrderResponseDto> getOrders(@RequestParam(required = false) Long accountId) {
+        List<OrderResponseDto> items = orderQueryService.findAllByAccountId(accountId).stream()
                 .map(this::toOrderResponse)
                 .toList();
+        return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/trades")
-    public List<TradeResponseDto> getTrades() {
-        return tradeQueryService.findAll().stream()
+    public ListResponse<TradeResponseDto> getTrades(@RequestParam(required = false) Long accountId) {
+        List<TradeResponseDto> items = tradeQueryService.findAllByAccountId(accountId).stream()
                 .map(this::toTradeResponse)
                 .toList();
+        return new ListResponse<>(items, items.size());
     }
 
     @GetMapping("/triggers")
-    public List<TriggerOrderResponseDto> getTriggers() {
-        return triggerOrderQueryService.findAll().stream()
+    public ListResponse<TriggerOrderResponseDto> getTriggers() {
+        List<TriggerOrderResponseDto> items = triggerOrderQueryService.findAll().stream()
                 .map(this::toTriggerResponse)
                 .toList();
+        return new ListResponse<>(items, items.size());
+    }
+
+    @GetMapping("/quotes")
+    public QuoteResponseDto getQuote(@RequestParam String currencyPair) {
+        Quote quote = quoteService.getQuote(currencyPair);
+        return new QuoteResponseDto(
+                quote.getCurrencyPair(),
+                quote.getBid(),
+                quote.getAsk(),
+                quote.getTimestamp()
+        );
     }
 
     private PositionResponseDto toPositionResponse(Position position) {
+        Long accountId = resolveAccountId(position.getUserId());
+        Quote quote = loadQuote(position.getCurrencyPair());
+        BigDecimal currentPrice = resolveCurrentPrice(position.getSide(), quote);
+        BigDecimal unrealizedPnl = calculateUnrealizedPnl(position, currentPrice);
         return new PositionResponseDto(
                 position.getId(),
-                position.getUserId(),
+                accountId,
                 position.getCurrencyPair(),
                 position.getSide(),
                 position.getQuantity(),
                 position.getAvgPrice(),
-                position.getVersion(),
+                currentPrice,
+                unrealizedPnl,
                 position.getUpdatedAt()
         );
     }
 
     private OrderResponseDto toOrderResponse(Order order) {
+        Long accountId = resolveAccountId(order.getUserId());
         return new OrderResponseDto(
                 order.getId(),
-                order.getUserId(),
+                accountId,
                 order.getCurrencyPair(),
                 order.getSide(),
                 order.getType(),
                 order.getQuantity(),
                 order.getStatus(),
+                order.getSourceType() == null ? null : order.getSourceType().name(),
                 order.getCreatedAt()
         );
     }
 
     private TradeResponseDto toTradeResponse(Trade trade) {
+        Long accountId = resolveAccountId(trade.getUserId());
         return new TradeResponseDto(
                 trade.getId(),
                 trade.getOrderId(),
-                trade.getUserId(),
+                accountId,
                 trade.getCurrencyPair(),
                 trade.getSide(),
                 trade.getPrice(),
@@ -200,21 +233,43 @@ public class InvestorApiController {
         );
     }
 
-    private Account resolveAccount(String accountId) {
-        if (accountId == null || accountId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountId must not be blank");
+    private Account resolveAccount(Long accountId) {
+        if (accountId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "accountId must not be null");
         }
 
-        return accountRepository.findByUserId(accountId)
-                .or(() -> parseNumericAccountId(accountId).flatMap(accountRepository::findById))
+        return accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "account not found"));
     }
 
-    private java.util.Optional<Long> parseNumericAccountId(String accountId) {
+    private Long resolveAccountId(String userId) {
+        return accountRepository.findByUserId(userId)
+                .map(Account::getId)
+                .orElse(null);
+    }
+
+    private Quote loadQuote(String currencyPair) {
         try {
-            return java.util.Optional.of(Long.parseLong(accountId));
-        } catch (NumberFormatException ex) {
-            return java.util.Optional.empty();
+            return quoteService.getQuote(currencyPair);
+        } catch (IllegalArgumentException ex) {
+            return null;
         }
+    }
+
+    private BigDecimal resolveCurrentPrice(OrderSide side, Quote quote) {
+        if (quote == null) {
+            return null;
+        }
+        return side == OrderSide.BUY ? quote.getBid() : quote.getAsk();
+    }
+
+    private BigDecimal calculateUnrealizedPnl(Position position, BigDecimal currentPrice) {
+        if (currentPrice == null) {
+            return null;
+        }
+        if (position.getSide() == OrderSide.BUY) {
+            return currentPrice.subtract(position.getAvgPrice()).multiply(position.getQuantity());
+        }
+        return position.getAvgPrice().subtract(currentPrice).multiply(position.getQuantity());
     }
 }

@@ -5,6 +5,7 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\ap
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\MarketOrderResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\OrderResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\PositionResponseDto.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\QuoteResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\TradeResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\api\dto\TriggerOrderResponseDto.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\backoffice\controller\AdminQueryController.java
@@ -32,6 +33,7 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\do
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\MarginRule.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\Order.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\OrderSide.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\OrderSourceType.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\OrderStatus.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\OrderType.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\domain\Position.java
@@ -76,6 +78,7 @@ D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\re
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\MarginRuleRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\OrderRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\PositionRepository.java
+D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\QuoteRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\TradeRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\repository\TriggerOrderRepository.java
 D:\workspace\FX_Raptor_demo\FX_Raptor_demo\src\main\java\com\example\fxraptor\risk\engine\RiskEngine.java

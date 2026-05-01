@@ -4,6 +4,7 @@ import com.example.fxraptor.cache.AccountCache;
 import com.example.fxraptor.cache.PositionCache;
 import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.Order;
+import com.example.fxraptor.domain.OrderSourceType;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.OrderStatus;
 import com.example.fxraptor.domain.Position;
@@ -151,7 +152,8 @@ class OrderEngineTest {
                 "user-1",
                 "USD/JPY",
                 OrderSide.BUY,
-                new BigDecimal("10000.00000000")
+                new BigDecimal("10000.00000000"),
+                OrderSourceType.USER
         ));
 
         ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);

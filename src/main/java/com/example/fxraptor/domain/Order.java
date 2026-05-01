@@ -46,6 +46,10 @@ public class Order {
     @Column(nullable = false, length = 20)
     private OrderStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private OrderSourceType sourceType;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -56,6 +60,9 @@ public class Order {
         }
         if (this.status == null) {
             this.status = OrderStatus.NEW;
+        }
+        if (this.sourceType == null) {
+            this.sourceType = OrderSourceType.USER;
         }
         this.createdAt = Instant.now();
     }
@@ -114,6 +121,14 @@ public class Order {
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+    }
+
+    public OrderSourceType getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(OrderSourceType sourceType) {
+        this.sourceType = sourceType;
     }
 
     public Instant getCreatedAt() {

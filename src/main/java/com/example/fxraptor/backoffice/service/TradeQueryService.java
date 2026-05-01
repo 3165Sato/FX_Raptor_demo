@@ -8,6 +8,7 @@ import com.example.fxraptor.repository.TradeRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TradeQueryService {
@@ -25,8 +26,14 @@ public class TradeQueryService {
         return tradeRepository.findAll();
     }
 
-    public List<AdminTradeResponse> findAllAdminTrades() {
-        return tradeRepository.findAll().stream()
+    public List<Trade> findAllByAccountId(Long accountId) {
+        return resolveUserId(accountId)
+                .map(tradeRepository::findAllByUserId)
+                .orElseGet(tradeRepository::findAll);
+    }
+
+    public List<AdminTradeResponse> findAllAdminTrades(Long accountId) {
+        return findAllByAccountId(accountId).stream()
                 .map(this::toAdminTradeResponse)
                 .toList();
     }
@@ -46,5 +53,12 @@ public class TradeQueryService {
                 trade.getQuantity(),
                 trade.getExecutedAt()
         );
+    }
+
+    private Optional<String> resolveUserId(Long accountId) {
+        if (accountId == null) {
+            return Optional.empty();
+        }
+        return accountRepository.findById(accountId).map(Account::getUserId);
     }
 }
