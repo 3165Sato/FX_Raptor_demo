@@ -10,6 +10,8 @@ import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
 import com.example.fxraptor.risk.service.MarginService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,8 @@ import java.util.Map;
  */
 @Component
 public class ValuationScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(ValuationScheduler.class);
 
     private final AccountRepository accountRepository;
     private final PositionRepository positionRepository;
@@ -54,11 +58,16 @@ public class ValuationScheduler {
         if (!valuationEnabled) {
             return;
         }
-        runValuationCycle();
+        try {
+            runValuationCycle();
+        } catch (Exception ex) {
+            log.error("Valuation scheduler failed.", ex);
+        }
     }
 
     public void runValuationCycle() {
         for (Account account : accountRepository.findAll()) {
+            log.debug("Running valuation for account. accountId={}, userId={}", account.getId(), account.getUserId());
             List<Position> positions = positionRepository.findAllByUserId(account.getUserId());
             if (positions.isEmpty()) {
                 continue;
@@ -69,6 +78,8 @@ public class ValuationScheduler {
             MarginCalculationResult result = marginService.calculateResult(account, positions, quotes, rules);
 
             if (marginService.shouldLiquidate(positions, rules, result)) {
+                log.info("Liquidation required during valuation. accountId={}, userId={}, marginRatio={}",
+                        account.getId(), account.getUserId(), result.marginMaintenanceRatio());
                 marginService.liquidate(account);
             }
         }

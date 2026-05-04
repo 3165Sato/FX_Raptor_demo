@@ -13,9 +13,13 @@ import com.example.fxraptor.domain.Quote;
 import com.example.fxraptor.order.model.MarketOrderRequest;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.OrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class MarketOrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(MarketOrderService.class);
 
     private final OrderRepository orderRepository;
     private final QuoteService quoteService;
@@ -27,6 +31,11 @@ public class MarketOrderService {
     }
 
     public void validate(MarketOrderRequest request) {
+        log.debug("Validating market order request. userId={}, currencyPair={}, side={}, quantity={}",
+                request == null ? null : request.userId(),
+                request == null ? null : request.currencyPair(),
+                request == null ? null : request.side(),
+                request == null ? null : request.quantity());
         if (request == null) {
             throw new IllegalArgumentException("request must not be null");
         }
@@ -49,6 +58,8 @@ public class MarketOrderService {
         if (quote.getBid() == null || quote.getAsk() == null) {
             throw new IllegalArgumentException("quote bid/ask must not be null for " + currencyPair);
         }
+        log.debug("Resolved market price. currencyPair={}, side={}, bid={}, ask={}",
+                currencyPair, side, quote.getBid(), quote.getAsk());
         return side == OrderSide.BUY ? quote.getAsk() : quote.getBid();
     }
 
@@ -61,6 +72,9 @@ public class MarketOrderService {
         order.setQuantity(request.quantity());
         order.setStatus(OrderStatus.NEW);
         order.setSourceType(request.sourceType() == null ? OrderSourceType.USER : request.sourceType());
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        log.info("Created order. orderId={}, userId={}, currencyPair={}, side={}, quantity={}, sourceType={}",
+                saved.getId(), saved.getUserId(), saved.getCurrencyPair(), saved.getSide(), saved.getQuantity(), saved.getSourceType());
+        return saved;
     }
 }

@@ -1,0 +1,130 @@
+2026-05-05 00:06:23.328 INFO  [main] c.e.fxraptor.FxRaptorDemoApplication [traceId=N/A] - Starting FxRaptorDemoApplication using Java 21.0.10 with PID 31912 (D:\workspace\FX_Raptor_demo\FX_Raptor_demo\target\classes started by yuta_ in D:\workspace\FX_Raptor_demo\FX_Raptor_demo)
+2026-05-05 00:06:23.331 DEBUG [main] c.e.fxraptor.FxRaptorDemoApplication [traceId=N/A] - Running with Spring Boot v3.4.3, Spring v6.2.3
+2026-05-05 00:06:23.332 INFO  [main] c.e.fxraptor.FxRaptorDemoApplication [traceId=N/A] - No active profile set, falling back to 1 default profile: "default"
+2026-05-05 00:06:23.650 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate [traceId=N/A] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-05 00:06:23.693 INFO  [main] o.s.d.r.c.RepositoryConfigurationDelegate [traceId=N/A] - Finished Spring Data repository scanning in 38 ms. Found 10 JPA repository interfaces.
+2026-05-05 00:06:23.938 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer [traceId=N/A] - Tomcat initialized with port 18080 (http)
+2026-05-05 00:06:23.948 INFO  [main] o.a.coyote.http11.Http11NioProtocol [traceId=N/A] - Initializing ProtocolHandler ["http-nio-18080"]
+2026-05-05 00:06:23.949 INFO  [main] o.a.catalina.core.StandardService [traceId=N/A] - Starting service [Tomcat]
+2026-05-05 00:06:23.950 INFO  [main] o.a.catalina.core.StandardEngine [traceId=N/A] - Starting Servlet engine: [Apache Tomcat/10.1.36]
+2026-05-05 00:06:23.994 INFO  [main] o.a.c.c.C.[Tomcat].[localhost].[/] [traceId=N/A] - Initializing Spring embedded WebApplicationContext
+2026-05-05 00:06:23.994 INFO  [main] o.s.b.w.s.c.ServletWebServerApplicationContext [traceId=N/A] - Root WebApplicationContext: initialization completed in 639 ms
+2026-05-05 00:06:24.027 DEBUG [main] c.e.fxraptor.infra.web.TraceIdFilter [traceId=N/A] - Filter 'traceIdFilter' configured for use
+2026-05-05 00:06:24.091 INFO  [main] o.h.jpa.internal.util.LogHelper [traceId=N/A] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-05 00:06:24.112 INFO  [main] org.hibernate.Version [traceId=N/A] - HHH000412: Hibernate ORM core version 6.6.8.Final
+2026-05-05 00:06:24.121 INFO  [main] o.h.c.i.RegionFactoryInitiator [traceId=N/A] - HHH000026: Second-level cache disabled
+2026-05-05 00:06:24.250 INFO  [main] o.s.o.j.p.SpringPersistenceUnitInfo [traceId=N/A] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-05 00:06:24.256 INFO  [main] com.zaxxer.hikari.HikariDataSource [traceId=N/A] - HikariPool-1 - Starting...
+2026-05-05 00:06:24.346 INFO  [main] com.zaxxer.hikari.pool.HikariPool [traceId=N/A] - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@42576db9
+2026-05-05 00:06:24.348 INFO  [main] com.zaxxer.hikari.HikariDataSource [traceId=N/A] - HikariPool-1 - Start completed.
+2026-05-05 00:06:24.363 WARN  [main] org.hibernate.orm.deprecation [traceId=N/A] - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-05 00:06:24.372 INFO  [main] o.hibernate.orm.connections.pooling [traceId=N/A] - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.13
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-05-05 00:06:24.886 INFO  [main] o.h.e.t.j.p.i.JtaPlatformInitiator [traceId=N/A] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-05 00:06:24.928 INFO  [main] o.s.o.j.LocalContainerEntityManagerFactoryBean [traceId=N/A] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-05 00:06:25.359 INFO  [main] o.s.d.j.r.query.QueryEnhancerFactory [traceId=N/A] - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-05 00:06:25.560 WARN  [main] o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [traceId=N/A] - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-05 00:06:25.722 INFO  [main] o.a.coyote.http11.Http11NioProtocol [traceId=N/A] - Starting ProtocolHandler ["http-nio-18080"]
+2026-05-05 00:06:25.733 INFO  [main] o.s.b.w.e.tomcat.TomcatWebServer [traceId=N/A] - Tomcat started on port 18080 (http) with context path '/'
+2026-05-05 00:06:25.738 INFO  [main] c.e.fxraptor.FxRaptorDemoApplication [traceId=N/A] - Started FxRaptorDemoApplication in 2.663 seconds (process running for 2.827)
+2026-05-05 00:06:31.915 INFO  [http-nio-18080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/] [traceId=N/A] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-05 00:06:31.916 INFO  [http-nio-18080-exec-1] o.s.web.servlet.DispatcherServlet [traceId=N/A] - Initializing Servlet 'dispatcherServlet'
+2026-05-05 00:06:31.917 INFO  [http-nio-18080-exec-1] o.s.web.servlet.DispatcherServlet [traceId=N/A] - Completed initialization in 1 ms
+2026-05-05 00:06:31.985 DEBUG [http-nio-18080-exec-2] c.e.f.a.c.InvestorApiController [traceId=ef65f695-d555-4a28-b815-d61c43bc657b] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:06:42.040 DEBUG [http-nio-18080-exec-4] c.e.f.a.c.InvestorApiController [traceId=7464763a-dc7f-4fc3-8fa2-2d4a85536fce] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:06:43.775 INFO  [http-nio-18080-exec-6] c.e.f.a.c.InvestorApiController [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Received market order request. accountId=1, currencyPair=USD/JPY, side=BUY, quantity=9001
+2026-05-05 00:06:43.778 INFO  [http-nio-18080-exec-6] c.e.f.order.engine.OrderEngine [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Starting market order execution. userId=account-1, currencyPair=USD/JPY, side=BUY, quantity=9001, sourceType=USER
+2026-05-05 00:06:43.779 DEBUG [http-nio-18080-exec-6] c.e.f.o.service.MarketOrderService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Validating market order request. userId=account-1, currencyPair=USD/JPY, side=BUY, quantity=9001
+2026-05-05 00:06:43.792 INFO  [http-nio-18080-exec-6] c.e.f.o.service.MarketOrderService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Created order. orderId=14, userId=account-1, currencyPair=USD/JPY, side=BUY, quantity=9001, sourceType=USER
+2026-05-05 00:06:43.797 DEBUG [http-nio-18080-exec-6] c.e.f.o.service.MarketOrderService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Resolved market price. currencyPair=USD/JPY, side=BUY, bid=150.03000000, ask=150.05000000
+2026-05-05 00:06:43.799 INFO  [http-nio-18080-exec-6] c.e.f.order.service.TradeService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Created trade. tradeId=13, orderId=14, userId=account-1, currencyPair=USD/JPY, side=BUY, quantity=9001, price=150.05000000
+2026-05-05 00:06:43.808 DEBUG [http-nio-18080-exec-6] c.e.f.order.engine.OrderEngine [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Evaluating cover trade. tradeId=13, accountId=1, currencyPair=USD/JPY
+2026-05-05 00:06:43.809 INFO  [http-nio-18080-exec-6] c.e.f.o.s.CoverExecutionService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Executing cover order. tradeId=13, accountId=1, currencyPair=USD/JPY, side=SELL, quantity=9001
+2026-05-05 00:06:43.815 INFO  [http-nio-18080-exec-6] c.e.f.o.s.CoverExecutionService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Cover order completed. coverOrderId=11, tradeId=13, accountId=1
+2026-05-05 00:06:43.829 INFO  [http-nio-18080-exec-6] c.e.f.order.service.PositionService [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Updated same-side position. positionId=8, userId=account-1, currencyPair=USD/JPY, side=BUY, quantity=15002.00000000, avgPrice=150.03799960
+2026-05-05 00:06:43.831 INFO  [http-nio-18080-exec-6] c.e.f.order.engine.OrderEngine [traceId=75f34700-3ee6-4e84-ab12-e9c2c58120cf] - Completed market order execution. orderId=14, tradeId=13, userId=account-1, currencyPair=USD/JPY, positionId=8
+2026-05-05 00:06:52.057 DEBUG [http-nio-18080-exec-8] c.e.f.a.c.InvestorApiController [traceId=d5386876-e566-4389-b335-4201ce5f9b77] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:02.077 DEBUG [http-nio-18080-exec-10] c.e.f.a.c.InvestorApiController [traceId=cb1bc590-dcde-4888-a9db-77fabf2394aa] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:12.093 DEBUG [http-nio-18080-exec-2] c.e.f.a.c.InvestorApiController [traceId=29223969-9e51-4080-91d8-908c9a7a60f7] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:22.109 DEBUG [http-nio-18080-exec-4] c.e.f.a.c.InvestorApiController [traceId=7ffa00ff-b187-46ab-91c8-2fb6b6e9c27f] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:29.092 INFO  [http-nio-18080-exec-6] c.e.f.a.c.InvestorApiController [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Received market order request. accountId=2, currencyPair=USD/JPY, side=BUY, quantity=9001
+2026-05-05 00:07:29.101 INFO  [http-nio-18080-exec-6] c.e.f.order.engine.OrderEngine [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Starting market order execution. userId=account-2, currencyPair=USD/JPY, side=BUY, quantity=9001, sourceType=USER
+2026-05-05 00:07:29.101 DEBUG [http-nio-18080-exec-6] c.e.f.o.service.MarketOrderService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Validating market order request. userId=account-2, currencyPair=USD/JPY, side=BUY, quantity=9001
+2026-05-05 00:07:29.105 INFO  [http-nio-18080-exec-6] c.e.f.o.service.MarketOrderService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Created order. orderId=15, userId=account-2, currencyPair=USD/JPY, side=BUY, quantity=9001, sourceType=USER
+2026-05-05 00:07:29.106 DEBUG [http-nio-18080-exec-6] c.e.f.o.service.MarketOrderService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Resolved market price. currencyPair=USD/JPY, side=BUY, bid=150.02000000, ask=150.04000000
+2026-05-05 00:07:29.107 INFO  [http-nio-18080-exec-6] c.e.f.order.service.TradeService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Created trade. tradeId=14, orderId=15, userId=account-2, currencyPair=USD/JPY, side=BUY, quantity=9001, price=150.04000000
+2026-05-05 00:07:29.109 DEBUG [http-nio-18080-exec-6] c.e.f.order.engine.OrderEngine [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Evaluating cover trade. tradeId=14, accountId=2, currencyPair=USD/JPY
+2026-05-05 00:07:29.109 INFO  [http-nio-18080-exec-6] c.e.f.o.s.CoverExecutionService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Executing cover order. tradeId=14, accountId=2, currencyPair=USD/JPY, side=SELL, quantity=9001
+2026-05-05 00:07:29.112 INFO  [http-nio-18080-exec-6] c.e.f.o.s.CoverExecutionService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Cover order completed. coverOrderId=12, tradeId=14, accountId=2
+2026-05-05 00:07:29.116 INFO  [http-nio-18080-exec-6] c.e.f.order.service.PositionService [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Updated same-side position. positionId=9, userId=account-2, currencyPair=USD/JPY, side=BUY, quantity=27003.00000000, avgPrice=150.03333333
+2026-05-05 00:07:29.118 INFO  [http-nio-18080-exec-6] c.e.f.order.engine.OrderEngine [traceId=7da8fb69-8386-4734-82e8-d2e4c2c308a2] - Completed market order execution. orderId=15, tradeId=14, userId=account-2, currencyPair=USD/JPY, positionId=9
+2026-05-05 00:07:32.126 DEBUG [http-nio-18080-exec-8] c.e.f.a.c.InvestorApiController [traceId=dfee2b86-4a8a-4c79-af8e-cdd8c0e84645] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:42.145 DEBUG [http-nio-18080-exec-10] c.e.f.a.c.InvestorApiController [traceId=fc01cce6-0b86-4337-bc8d-4783ccbcc464] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:52.174 DEBUG [http-nio-18080-exec-2] c.e.f.a.c.InvestorApiController [traceId=a5054ae0-b3f4-4bb8-aab8-e306744e30ae] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:07:57.636 INFO  [http-nio-18080-exec-4] c.e.f.a.c.InvestorApiController [traceId=05a4ca7b-6f21-4088-af28-b397b9b0a67f] - Received market order request. accountId=2, currencyPair=USD/JPY, side=BUY, quantity=9001
+2026-05-05 00:07:57.645 ERROR [http-nio-18080-exec-4] c.e.f.a.h.GlobalExceptionHandler [traceId=05a4ca7b-6f21-4088-af28-b397b9b0a67f] - API runtime error occurred. traceId=05a4ca7b-6f21-4088-af28-b397b9b0a67f, method=POST, uri=/api/orders/market, controller=InvestorApiController, exception=ResponseStatusException, message=404 NOT_FOUND "account not found"
+org.springframework.web.server.ResponseStatusException: 404 NOT_FOUND "account not found"
+	at com.example.fxraptor.api.controller.InvestorApiController.lambda$resolveAccount$1(InvestorApiController.java:251)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at com.example.fxraptor.api.controller.InvestorApiController.resolveAccount(InvestorApiController.java:251)
+	at com.example.fxraptor.api.controller.InvestorApiController.placeMarketOrder(InvestorApiController.java:87)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:257)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:190)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1088)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:978)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at com.example.fxraptor.infra.web.TraceIdFilter.doFilterInternal(TraceIdFilter.java:30)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1743)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2026-05-05 00:08:02.202 DEBUG [http-nio-18080-exec-6] c.e.f.a.c.InvestorApiController [traceId=6cc69fdc-3250-4cb2-b1d3-59d57d6b672b] - Fetching quote. currencyPair=USD/JPY
+2026-05-05 00:08:12.232 DEBUG [http-nio-18080-exec-8] c.e.f.a.c.InvestorApiController [traceId=a31e5d0a-6c8e-4f51-bcdb-543b82666f9a] - Fetching quote. currencyPair=USD/JPY

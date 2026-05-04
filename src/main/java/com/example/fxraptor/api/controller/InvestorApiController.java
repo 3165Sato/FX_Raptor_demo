@@ -29,6 +29,8 @@ import com.example.fxraptor.order.model.MarketOrderExecutionResult;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.risk.service.TriggerOrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,6 +47,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class InvestorApiController {
+
+    private static final Logger log = LoggerFactory.getLogger(InvestorApiController.class);
 
     private final OrderEngine orderEngine;
     private final TriggerOrderService triggerOrderService;
@@ -78,6 +82,8 @@ public class InvestorApiController {
 
     @PostMapping("/orders/market")
     public MarketOrderResponseDto placeMarketOrder(@RequestBody MarketOrderRequestDto request) {
+        log.info("Received market order request. accountId={}, currencyPair={}, side={}, quantity={}",
+                request.accountId(), request.currencyPair(), request.side(), request.quantity());
         Account account = resolveAccount(request.accountId());
         MarketOrderExecutionResult result = orderEngine.executeMarketOrder(new MarketOrderCommand(
                 account.getUserId(),
@@ -102,6 +108,8 @@ public class InvestorApiController {
 
     @PostMapping("/triggers")
     public TriggerOrderResponseDto createTrigger(@RequestBody CreateTriggerOrderRequestDto request) {
+        log.info("Received trigger order request. accountId={}, currencyPair={}, side={}, triggerType={}, quantity={}",
+                request.accountId(), request.currencyPair(), request.side(), request.triggerType(), request.quantity());
         Account account = resolveAccount(request.accountId());
         TriggerOrder order = new TriggerOrder();
         order.setAccountId(account.getId());
@@ -162,6 +170,7 @@ public class InvestorApiController {
 
     @GetMapping("/quotes")
     public QuoteResponseDto getQuote(@RequestParam String currencyPair) {
+        log.debug("Fetching quote. currencyPair={}", currencyPair);
         Quote quote = quoteService.getQuote(currencyPair);
         return new QuoteResponseDto(
                 quote.getCurrencyPair(),

@@ -14,6 +14,8 @@ import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,7 @@ public class MarginService {
     private static final int MONEY_SCALE = 8;
     private static final int RATIO_SCALE = 4;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    private static final Logger log = LoggerFactory.getLogger(MarginService.class);
 
     private final OrderEngine orderEngine;
     private final QuoteService quoteService;
@@ -104,6 +107,9 @@ public class MarginService {
         BigDecimal normalizedRequiredMargin = requiredMargin.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
         BigDecimal equity = account.getBalance().add(unrealizedPnl).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
         BigDecimal marginRatio = calculateMarginMaintenanceRatio(equity, normalizedRequiredMargin);
+
+        log.debug("Calculated margin result. userId={}, requiredMargin={}, equity={}, marginRatio={}, positions={}",
+                account.getUserId(), normalizedRequiredMargin, equity, marginRatio, positions.size());
 
         return new MarginCalculationResult(normalizedRequiredMargin, equity, marginRatio);
     }
@@ -186,6 +192,9 @@ public class MarginService {
             ).reversed());
 
             Position target = sortedByNotional.get(0);
+            log.info("Executing liquidation order. accountId={}, userId={}, currencyPair={}, side={}, quantity={}",
+                    latestAccount.getId(), latestAccount.getUserId(), target.getCurrencyPair(),
+                    oppositeSide(target.getSide()), target.getQuantity());
             orderEngine.executeMarketOrder(new MarketOrderCommand(
                     latestAccount.getUserId(),
                     target.getCurrencyPair(),

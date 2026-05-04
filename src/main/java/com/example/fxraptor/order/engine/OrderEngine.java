@@ -29,11 +29,14 @@ import com.example.fxraptor.order.service.PositionService;
 import com.example.fxraptor.order.service.TradeService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.repository.OrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class OrderEngine {
 
     private static final int POSITION_UPDATE_MAX_RETRIES = 3;
+    private static final Logger log = LoggerFactory.getLogger(OrderEngine.class);
 
     private final MarketOrderService marketOrderService;
     private final TradeService tradeService;
@@ -75,6 +78,8 @@ public class OrderEngine {
     }
 
     public MarketOrderExecutionResult executeMarketOrder(MarketOrderCommand command) {
+        log.info("Starting market order execution. userId={}, currencyPair={}, side={}, quantity={}, sourceType={}",
+                command.userId(), command.currencyPair(), command.side(), command.quantity(), command.sourceType());
         MarketOrderRequest request = new MarketOrderRequest(
                 command.userId(),
                 command.currencyPair(),
@@ -88,6 +93,8 @@ public class OrderEngine {
             try {
                 return executeInTransaction(request);
             } catch (OptimisticLockingFailureException | DataIntegrityViolationException ex) {
+                log.warn("Retrying market order execution after persistence conflict. attempt={}, userId={}, currencyPair={}, side={}",
+                        attempt, request.userId(), request.currencyPair(), request.side(), ex);
                 if (attempt == POSITION_UPDATE_MAX_RETRIES) {
                     throw ex;
                 }
@@ -118,6 +125,9 @@ public class OrderEngine {
             Order filledOrder = orderRepository.save(order);
 
             updateCaches(request.userId(), nettingResult, savedPosition);
+            log.info("Completed market order execution. orderId={}, tradeId={}, userId={}, currencyPair={}, positionId={}",
+                    filledOrder.getId(), trade.getId(), request.userId(), request.currencyPair(),
+                    savedPosition == null ? null : savedPosition.getId());
             return new MarketOrderExecutionResult(filledOrder, trade, savedPosition);
         });
 
@@ -131,6 +141,8 @@ public class OrderEngine {
         Long accountId = accountRepository.findByUserId(userId)
                 .map(Account::getId)
                 .orElse(null);
+        log.debug("Evaluating cover trade. tradeId={}, accountId={}, currencyPair={}",
+                trade.getId(), accountId, trade.getCurrencyPair());
         coverDecisionService.decide(trade, accountId)
                 .ifPresent(coverExecutionService::execute);
     }

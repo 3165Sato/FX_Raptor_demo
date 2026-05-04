@@ -4,12 +4,16 @@ import com.example.fxraptor.domain.Account;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.repository.AccountRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
 @Service
 public class AccountService {
+
+    private static final Logger log = LoggerFactory.getLogger(AccountService.class);
 
     private final AccountRepository accountRepository;
 
@@ -28,7 +32,11 @@ public class AccountService {
                 .orElseThrow(() -> new IllegalArgumentException("account not found for userId: " + userId));
         BigDecimal pnl = calculateRealizedPnl(closedPosition, executionPrice, closedQty);
         account.setBalance(account.getBalance().add(pnl));
-        accountRepository.save(account);
+        Account saved = accountRepository.save(account);
+        Account accountToLog = saved == null ? account : saved;
+        log.info("Applied realized PnL. accountId={}, userId={}, pnl={}, newBalance={}, currencyPair={}, closedPositionId={}",
+                accountToLog.getId(), accountToLog.getUserId(), pnl, accountToLog.getBalance(),
+                closedPosition.getCurrencyPair(), closedPosition.getId());
     }
 
     public BigDecimal calculateRealizedPnl(Position closedPosition,

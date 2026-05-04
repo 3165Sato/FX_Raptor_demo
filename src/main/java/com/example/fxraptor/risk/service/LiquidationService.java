@@ -12,6 +12,8 @@ import com.example.fxraptor.repository.MarginRuleRepository;
 import com.example.fxraptor.repository.PositionRepository;
 import com.example.fxraptor.risk.model.MarginCalculationResult;
 import com.example.fxraptor.risk.model.InternalOrderCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 public class LiquidationService {
 
     private static final String LIQUIDATION_REASON = "MARGIN_RATIO_BELOW_LIQUIDATION_RATE";
+    private static final Logger log = LoggerFactory.getLogger(LiquidationService.class);
 
     private final AccountRepository accountRepository;
     private final PositionRepository positionRepository;
@@ -58,6 +61,8 @@ public class LiquidationService {
     public List<InternalOrderCommand> createInternalCommands(Account account,
                                                              List<Position> positions,
                                                              Quote quote) {
+        log.debug("Creating internal liquidation commands. accountId={}, userId={}, positions={}",
+                account.getId(), account.getUserId(), positions.size());
         return positions.stream()
                 .sorted(Comparator.comparing((Position position) -> positionNotional(position, quote)).reversed())
                 .map(position -> new InternalOrderCommand(
@@ -97,6 +102,9 @@ public class LiquidationService {
             if (!marginService.shouldLiquidate(positions, List.of(rule), result)) {
                 continue;
             }
+
+            log.info("Publishing liquidation requests. accountId={}, userId={}, currencyPair={}, marginRatio={}",
+                    account.getId(), account.getUserId(), event.currencyPair(), result.marginMaintenanceRatio());
 
             List<InternalOrderCommand> commands = createInternalCommands(account, positions, quote);
             for (InternalOrderCommand command : commands) {

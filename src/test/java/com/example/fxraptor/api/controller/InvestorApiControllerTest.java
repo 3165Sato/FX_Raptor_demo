@@ -2,6 +2,7 @@ package com.example.fxraptor.api.controller;
 
 import com.example.fxraptor.api.dto.CreateTriggerOrderRequestDto;
 import com.example.fxraptor.api.dto.MarketOrderRequestDto;
+import com.example.fxraptor.api.handler.GlobalExceptionHandler;
 import com.example.fxraptor.backoffice.service.AccountQueryService;
 import com.example.fxraptor.backoffice.service.OrderQueryService;
 import com.example.fxraptor.backoffice.service.PositionQueryService;
@@ -22,6 +23,7 @@ import com.example.fxraptor.order.model.MarketOrderExecutionResult;
 import com.example.fxraptor.quote.QuoteService;
 import com.example.fxraptor.repository.AccountRepository;
 import com.example.fxraptor.risk.service.TriggerOrderService;
+import com.example.fxraptor.infra.web.TraceIdFilter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +42,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -120,9 +124,13 @@ class InvestorApiControllerTest {
 
     @Test
     void marketOrderRejectsStringAccountIdInJson() throws Exception {
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller()).build();
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller())
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .addFilters(new TraceIdFilter())
+                .build();
 
         mockMvc.perform(post("/api/orders/market")
+                        .header(TraceIdFilter.TRACE_ID_HEADER, "test-trace-id")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -132,7 +140,11 @@ class InvestorApiControllerTest {
                                   "quantity": 10000
                                 }
                                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(header().string(TraceIdFilter.TRACE_ID_HEADER, "test-trace-id"))
+                .andExpect(jsonPath("$.traceId").value("test-trace-id"))
+                .andExpect(jsonPath("$.path").value("/api/orders/market"))
+                .andExpect(jsonPath("$.error").value("Bad Request"));
     }
 
     private InvestorApiController controller() {

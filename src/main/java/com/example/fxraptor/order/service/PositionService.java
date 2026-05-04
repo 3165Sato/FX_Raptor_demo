@@ -4,6 +4,8 @@ import com.example.fxraptor.domain.Position;
 import com.example.fxraptor.domain.OrderSide;
 import com.example.fxraptor.order.model.NettingResult;
 import com.example.fxraptor.repository.PositionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -13,6 +15,7 @@ import java.math.RoundingMode;
 public class PositionService {
 
     private static final int PRICE_SCALE = 8;
+    private static final Logger log = LoggerFactory.getLogger(PositionService.class);
     private final PositionRepository positionRepository;
 
     public PositionService(PositionRepository positionRepository) {
@@ -56,7 +59,10 @@ public class PositionService {
         position.setSide(side);
         position.setQuantity(quantity);
         position.setAvgPrice(executionPrice);
-        return positionRepository.saveAndFlush(position);
+        Position saved = positionRepository.saveAndFlush(position);
+        log.info("Created position. positionId={}, userId={}, currencyPair={}, side={}, quantity={}, avgPrice={}",
+                saved.getId(), saved.getUserId(), saved.getCurrencyPair(), saved.getSide(), saved.getQuantity(), saved.getAvgPrice());
+        return saved;
     }
 
     public Position updateSameSidePosition(Position sameSidePosition,
@@ -71,17 +77,26 @@ public class PositionService {
         );
         sameSidePosition.setQuantity(newQuantity);
         sameSidePosition.setAvgPrice(newAvgPrice);
-        return positionRepository.saveAndFlush(sameSidePosition);
+        Position saved = positionRepository.saveAndFlush(sameSidePosition);
+        log.info("Updated same-side position. positionId={}, userId={}, currencyPair={}, side={}, quantity={}, avgPrice={}",
+                saved.getId(), saved.getUserId(), saved.getCurrencyPair(), saved.getSide(), saved.getQuantity(), saved.getAvgPrice());
+        return saved;
     }
 
     public Position reduceOrDeleteOppositePosition(Position oppositeSidePosition, BigDecimal closedQuantity) {
         BigDecimal remaining = oppositeSidePosition.getQuantity().subtract(closedQuantity);
         if (remaining.compareTo(BigDecimal.ZERO) == 0) {
+            log.info("Deleting fully closed position. positionId={}, userId={}, currencyPair={}, side={}, closedQuantity={}",
+                    oppositeSidePosition.getId(), oppositeSidePosition.getUserId(), oppositeSidePosition.getCurrencyPair(),
+                    oppositeSidePosition.getSide(), closedQuantity);
             positionRepository.delete(oppositeSidePosition);
             return null;
         }
         oppositeSidePosition.setQuantity(remaining);
-        return positionRepository.saveAndFlush(oppositeSidePosition);
+        Position saved = positionRepository.saveAndFlush(oppositeSidePosition);
+        log.info("Reduced opposite-side position. positionId={}, userId={}, currencyPair={}, side={}, remainingQuantity={}",
+                saved.getId(), saved.getUserId(), saved.getCurrencyPair(), saved.getSide(), saved.getQuantity());
+        return saved;
     }
 
     public BigDecimal weightedAverage(BigDecimal currentAvg,

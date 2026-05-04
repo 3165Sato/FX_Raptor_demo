@@ -7,6 +7,8 @@ import com.example.fxraptor.domain.CoverOrderStatus;
 import com.example.fxraptor.order.model.CoverOrderCommand;
 import com.example.fxraptor.repository.CoverExecutionLogRepository;
 import com.example.fxraptor.repository.CoverOrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,6 +18,8 @@ import java.time.Instant;
  */
 @Service
 public class CoverExecutionService {
+
+    private static final Logger log = LoggerFactory.getLogger(CoverExecutionService.class);
 
     private final CoverOrderRepository coverOrderRepository;
     private final CoverExecutionLogRepository coverExecutionLogRepository;
@@ -27,6 +31,8 @@ public class CoverExecutionService {
     }
 
     public CoverOrder execute(CoverOrderCommand command) {
+        log.info("Executing cover order. tradeId={}, accountId={}, currencyPair={}, side={}, quantity={}",
+                command.tradeId(), command.accountId(), command.currencyPair(), command.side(), command.quantity());
         CoverOrder order = new CoverOrder();
         order.setTradeId(command.tradeId());
         order.setAccountId(command.accountId());
@@ -38,14 +44,17 @@ public class CoverExecutionService {
         order.setStatus(CoverOrderStatus.FILLED);
         CoverOrder saved = coverOrderRepository.save(order);
 
-        CoverExecutionLog log = new CoverExecutionLog();
-        log.setCoverOrderId(saved.getCoverOrderId());
-        log.setExecutedPrice(command.requestedPrice());
-        log.setExecutedQuantity(command.quantity());
-        log.setExecutionResult(CoverExecutionResult.SUCCESS);
-        log.setExecutedAt(Instant.now());
-        log.setMessage("simulated cover fill");
-        coverExecutionLogRepository.save(log);
+        CoverExecutionLog executionLog = new CoverExecutionLog();
+        executionLog.setCoverOrderId(saved.getCoverOrderId());
+        executionLog.setExecutedPrice(command.requestedPrice());
+        executionLog.setExecutedQuantity(command.quantity());
+        executionLog.setExecutionResult(CoverExecutionResult.SUCCESS);
+        executionLog.setExecutedAt(Instant.now());
+        executionLog.setMessage("simulated cover fill");
+        coverExecutionLogRepository.save(executionLog);
+
+        log.info("Cover order completed. coverOrderId={}, tradeId={}, accountId={}",
+                saved.getCoverOrderId(), saved.getTradeId(), saved.getAccountId());
 
         return saved;
     }
